@@ -23,23 +23,24 @@
   A2D, digital, counter, GPS, accelerometer, IMU I2C sensors on QWIIC bus
 */
 // I2C support
-#include <Wire.h>
-// SPI and SD card support
-#include <SPI.h>
-#include <SD.h>
-// GPS over I2C support
-#include <SparkFun_I2C_GPS_Arduino_Library.h>         // Use Library Manager to install Sparkfun QWIIC GPS or from https://github.com/sparkfun/SparkFun_I2C_GPS_Arduino_Library
-#include <TinyGPS++.h>                                // From: https://github.com/mikalhart/TinyGPSPlus
-// accelerometer over I2C support
-#include "SparkFun_MMA8452Q.h"                        // Use Library Manager to install Sparkfun Sparkfun MMA8452Q or from: http://librarymanager/All#SparkFun_MMA8452Q
+#include <Wire.h>                                     // TWI I2C device
+#include <SPI.h>                                      // SPI device
+#include <SD.h>                                       // SD card support
+#include <SparkFun_I2C_GPS_Arduino_Library.h>         // QWIIC GPS device
+#include <TinyGPS++.h>                                // GPS sentence translator
+#include "SparkFun_MMA8452Q.h"                        // QWIIC accelerometer
 
 //#define DEBUGSTR      // log to logger and serial port
 
-#define STARTBUTTON  9 // start/stop button
-#define GPSPIN      10 //GPS Status LED
-#define ACCELPIN    11 //Accel Status LED
-#define LOGGERPIN   12 //Logger Status LED
+// digital in/out defs
+#define STARTBUTTON  9  // start/stop button
+#define GPSPIN      10  // GPS Status LED
+#define READYPIN    11  // Accel Status LED
+#define LOGGERPIN   12  // Logger Status LED
+#define CHIPSELECT  53  // SD card chip select pin (DUE)
+//#define CHIPSELECT  8  // SD card chip select pin (UNO)
 
+// device info
 #define ANALOG1 0x08
 #define ANALOG2 0x09
 #define DEVICECOUNT 16
@@ -49,10 +50,8 @@
 #define I2CATOD 2
 #define I2CDIGITAL 3
 #define I2CCOUNTER 4
-// SD card chip select pin
-#define CHIPSELECT 53
-#define STDMODE
-//#define FASTMODE
+#define STDMODE     // 100K bus
+//#define FASTMODE    // 400K bus
 
 // for quick conversion between numeric and byte values
 union DataPacket
@@ -65,9 +64,9 @@ union DataPacket
   char c[4];        // 4 bytes
 };
 
-I2CGPS myI2CGPS;     // hook gps object to the library
-TinyGPSPlus gps;     // declare gps object
-MMA8452Q accel;      // declare 3 axis accel MMA8452 object
+I2CGPS myI2CGPS;        // hook gps object to the library
+TinyGPSPlus gpsDecoder; // declare gps translator object
+MMA8452Q accel;         // declare 3 axis accel MMA8452 object
 
 // gps values
 DataPacket gpsTime;
@@ -76,7 +75,7 @@ DataPacket gpsLong;
 DataPacket gpsSpeed;
 DataPacket gpsHeading;
 DataPacket gpsSats;
-// accelerometer value
+// accelerometer values
 DataPacket xVal;
 DataPacket yVal;
 DataPacket zVal;
@@ -84,73 +83,65 @@ DataPacket zVal;
 DataPacket timestamp;
 // channel ID packet
 DataPacket channelID;
+// device data
+int devicesPresent = 0;               // total on I2C bus
+bool devicePresent[DEVICECOUNT];      // true if device is present
+bool deviceValid[DEVICECOUNT];        // true if last sample of device was valid
+int deviceAddress[DEVICECOUNT];       // I2C address (if appropriate)
+int deviceType[DEVICECOUNT];          // device type
+DataPacket deviceVal[DEVICECOUNT];    // I2C devices value (GPS, ACCEL, IMU handled differently due to multiple values/sample
 
-
+// log file info
+File dataFile;
 String logFileName;
 
-int devicesPresent = 0;
-bool deviceValid[DEVICECOUNT];
-bool devicePresent[DEVICECOUNT];
-int deviceAddress[DEVICECOUNT];
-int deviceType[DEVICECOUNT];
-// I2C devices value
-DataPacket deviceVal[DEVICECOUNT];
-
-File dataFile;
+// logger state
 bool loggerRun = false;
 bool waitmsg = true;
 bool runmsg = true;
+
 //
-//
+// initialization
 //
 void setup()
 {
+  loggerRun = false;  // not logging at startup, wait for button push
+  // i/o pin config
   pinMode(GPSPIN, OUTPUT);
-  pinMode(ACCELPIN, OUTPUT);
+  pinMode(READYPIN, OUTPUT);
   pinMode(LOGGERPIN, OUTPUT);
   pinMode(STARTBUTTON, INPUT_PULLUP);
-  loggerRun = false;
-  for(int i = 0; i < 10; i++)
+  // 'cylon eyes' at startup
+  digitalWrite(READYPIN, LOW);
+  digitalWrite(GPSPIN, LOW);
+  digitalWrite(READYPIN, LOW);
+  digitalWrite(LOGGERPIN, LOW);
+  for(int i = 0; i < 20; i++)
   {
-    digitalWrite(GPSPIN, HIGH);
-    delay(100);
-    digitalWrite(ACCELPIN, HIGH);
-    delay(100);
     digitalWrite(GPSPIN, LOW);
     digitalWrite(LOGGERPIN, HIGH);
-    delay(100);
-    digitalWrite(ACCELPIN, LOW);
-    delay(100);
+    delay(10);
     digitalWrite(LOGGERPIN, LOW);
+    digitalWrite(GPSPIN, HIGH);
+    delay(10);
+    digitalWrite(GPSPIN, LOW);
+    digitalWrite(READYPIN, HIGH);
+    delay(10);
+    digitalWrite(READYPIN, LOW);
+    digitalWrite(GPSPIN, HIGH);
+    delay(10);
   }
+  digitalWrite(READYPIN, LOW);
+  digitalWrite(GPSPIN, LOW);
+  digitalWrite(LOGGERPIN, LOW);
+  // serial port initialization
   Serial.begin(9600);
   #ifdef DEBUGSTR
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
   #endif
-  Serial.println("Team Yamura data logger");
-
-  // device setup
-  // should be done from a file on the logger card
-  for(int deviceIdx =0; deviceIdx< DEVICECOUNT; deviceIdx++)
-  {
-    deviceValid[deviceIdx] = false;
-    devicePresent[deviceIdx] = false;
-    deviceAddress[deviceIdx] = 0;
-    deviceType[deviceIdx] = -1;
-    deviceVal[deviceIdx].ul = 0;
-  }
-  devicePresent[0] = true;
-  deviceAddress[0] = 0;
-  deviceType[0] = GPS;
-  devicePresent[1] = true;
-  deviceAddress[1] = 0;
-  deviceType[1] = ACCEL;
-  devicePresent[2] = true;
-  deviceAddress[2] = 0x08;
-  deviceType[2] = I2CATOD;
-  devicesPresent = 3;
+  Serial.println("Team Yamura Logger 2.0");
 
   Serial.println("Initializing SD card...");
   // see if the card is present and can be initialized:
@@ -176,9 +167,6 @@ void setup()
   Serial.println("I2C clock 400K");
   Wire.setClock(400000);  // fast mode
   #endif
-  digitalWrite(GPSPIN, LOW);
-  digitalWrite(ACCELPIN, LOW);
-  digitalWrite(LOGGERPIN, LOW);
 
   // initialize GPS
   Serial.println("GPS initialization");
@@ -209,12 +197,35 @@ void setup()
     Serial.println("Accelerometer found");
   }
 
+  // device setup
+  // should be done from a file on the logger card
+  for(int deviceIdx =0; deviceIdx< DEVICECOUNT; deviceIdx++)
+  {
+    deviceValid[deviceIdx] = false;
+    devicePresent[deviceIdx] = false;
+    deviceAddress[deviceIdx] = 0;
+    deviceType[deviceIdx] = -1;
+    deviceVal[deviceIdx].ul = 0;
+  }
+  devicePresent[0] = true;
+  deviceAddress[0] = 0;
+  deviceType[0] = GPS;
+  devicePresent[1] = true;
+  deviceAddress[1] = 0;
+  deviceType[1] = ACCEL;
+  devicePresent[2] = true;
+  deviceAddress[2] = 0x08;
+  deviceType[2] = I2CATOD;
+  devicesPresent = 3;
+
   // all initialized, ready to go!
-  Serial.println("Yamura Logger 2.0");
-  loggerRun = false;
+  Serial.println("Logger ready!");
+  digitalWrite(READYPIN, HIGH);
 }
 //
-//
+// main loop - check for start/stop
+// if started, check sensors and log data
+// if stopped, look for data download request
 //
 void loop()
 {
@@ -224,10 +235,19 @@ void loop()
     CheckSensors();
     LogData();
   }
+  else
+  {
+    // TODO - check for request to upload data
+  }
 }
+//
+// look for start/stop button press
+//
 void CheckStart()
 {
+  // read button state
   int buttonVal = digitalRead(STARTBUTTON);
+  // pressed, was running. stop and close file
   if((buttonVal == LOW) && (loggerRun == true))
   {
     digitalWrite(LOGGERPIN, LOW);
@@ -237,6 +257,7 @@ void CheckStart()
     runmsg = true;
     delay(1000);
   }
+  // pressed, was stop. start and open next file
   else if((buttonVal == LOW) && (loggerRun == false))
   {
     digitalWrite(LOGGERPIN, HIGH);
@@ -245,13 +266,18 @@ void CheckStart()
     loggerRun = true;
     waitmsg = true;
   }
+  // released
   else if(buttonVal == HIGH)
   {
+    // not running, wait message not already output
+    // show waiting message
     if ((loggerRun == false) && (waitmsg))
     {
       Serial.println("waiting for start...");
       waitmsg = false;
     }
+    // running, run message not already output
+    // show running message
     else if  ((loggerRun == true) && (runmsg))
     {
       Serial.println("running");
@@ -259,16 +285,23 @@ void CheckStart()
     }
   }
 }
+//
+// check all configured sensors
+// if valid, store data and set valid flag true
+//
 void CheckSensors()
 {
   Serial.print("check sensors ");
+  // no devices valid yet
+  for(int deviceIdx =0; deviceIdx< devicesPresent; deviceIdx++)
+  {
+    deviceValid[deviceIdx] = false;
+  }
   //
   // check all devices present
   //
   for(int deviceIdx =0; deviceIdx< devicesPresent; deviceIdx++)
   {
-    // channel not read yet
-    deviceValid[deviceIdx] = false;
     if(deviceType[deviceIdx] == GPS)
     {
       Serial.print(" GPS ");
@@ -276,25 +309,25 @@ void CheckSensors()
       // check GPS
       while (myI2CGPS.available()) //available() returns the number of new bytes available from the GPS module
       {
-        gps.encode(myI2CGPS.read()); //Feed the GPS parser
+        gpsDecoder.encode(myI2CGPS.read()); //Feed the GPS parser
       }
       // invalid data from GPS - skip
-      if(!gps.time.isUpdated())
+      if(!gpsDecoder.time.isUpdated())
       {
-        deviceValid[deviceIdx] = false;
         Serial.print("--");
       }
+      // valid, save
       else
       {
         deviceValid[deviceIdx] = true;
         // satellites in view
-        gpsSats.ul = gps.satellites.value();
+        gpsSats.ul = gpsDecoder.satellites.value();
         // location
-        gpsLat.f = gps.location.lat();
-        gpsLong.f = gps.location.lng();
-        gpsSpeed.f = gps.speed.mph();
+        gpsLat.f = gpsDecoder.location.lat();
+        gpsLong.f = gpsDecoder.location.lng();
+        gpsSpeed.f = gpsDecoder.speed.mph();
         // heading
-        gpsHeading.f = gps.course.deg();
+        gpsHeading.f = gpsDecoder.course.deg();
         Serial.print("OK");
       }
     }
@@ -304,15 +337,17 @@ void CheckSensors()
       // invalid data from accelerometer - skip
       if (!accel.available()) 
       {
-        deviceValid[deviceIdx] = false;
         Serial.print("--");
-        continue;
       }
-      Serial.print("OK");
-      deviceValid[deviceIdx] = true;
-      xVal.f = accel.getCalculatedX();
-      yVal.f = accel.getCalculatedY();
-      zVal.f = accel.getCalculatedZ();
+      // valid - save
+      else
+      {
+        Serial.print("OK");
+        deviceValid[deviceIdx] = true;
+        xVal.f = accel.getCalculatedX();
+        yVal.f = accel.getCalculatedY();
+        zVal.f = accel.getCalculatedZ();
+      }
     }
     else if ((deviceType[deviceIdx] == I2CATOD) ||
              (deviceType[deviceIdx] == I2CDIGITAL) ||
@@ -325,27 +360,30 @@ void CheckSensors()
       int availableBytes = Wire.requestFrom(deviceAddress[deviceIdx], 4);
       if(availableBytes < 4)
       {
-        deviceValid[deviceIdx] = false;
         Serial.print(" --");
         continue;
       }
-      deviceValid[deviceIdx] = true;
-      Serial.print(" OK");
-      for(int byteCnt = 0; byteCnt < availableBytes; byteCnt++) 
+      else
       {
-        // receive a byte as character
-        deviceVal[deviceIdx].c[byteCnt] = Wire.read(); 
+        deviceValid[deviceIdx] = true;
+        Serial.print(" OK");
+        for(int byteCnt = 0; byteCnt < availableBytes; byteCnt++) 
+        {
+          // receive a byte as character
+          deviceVal[deviceIdx].c[byteCnt] = Wire.read(); 
+        }
       }
     }
   }
-  Serial.println(" X");
+  Serial.println("");
 }
 //
-// log new data
+// log latest valid data
 //
 void LogData()
 {
-  bool firstValid = false;
+  // log time
+  LogTime(micros());
   //
   // check all devices present
   //
@@ -353,11 +391,6 @@ void LogData()
   {
     if(deviceValid[deviceIdx])
     {
-      // add time before first valid output
-      if(!firstValid)
-      {
-        LogTime(micros());
-      }
       if(deviceType[deviceIdx] == GPS) 
       {
         LogGPSData(deviceIdx);
@@ -410,7 +443,7 @@ void LogGPSData(int deviceIdx)
   dataFile.flush();
 }
 //
-// analog, digital, or counter channel on I2C bus
+// analog channel on I2C bus
 //
 void LogI2CAnalog(int deviceIdx)
 {
@@ -421,7 +454,7 @@ void LogI2CAnalog(int deviceIdx)
   dataFile.flush();
 }
 //
-//
+// digital channel on I2C bus
 //
 void LogI2CDigital(int deviceIdx)
 {
@@ -432,7 +465,7 @@ void LogI2CDigital(int deviceIdx)
   dataFile.flush();
 }
 //
-//
+// counter channel on I2C bus
 //
 void LogI2CCounter(int deviceIdx)
 {
@@ -443,7 +476,7 @@ void LogI2CCounter(int deviceIdx)
   dataFile.flush();
 }
 //
-//
+// log time value
 //
 void LogTime(unsigned long t)
 {
@@ -451,15 +484,18 @@ void LogTime(unsigned long t)
   dataFile.write("T");
   dataFile.write(timestamp.c, 4);
 }
+//
+// find next available log file and open it
+// if there are too many files, quit
+//
 void OpenDataFile()
 {
   int logFileIdx = 0;
   logFileName = "LOG0000.YLG";
-  Serial.println("Finding next data file...");
-  Serial.print("Testing ");
-  Serial.println(logFileName);
+  Serial.print("Finding next data file");
   while(SD.exists(logFileName))
   {
+    Serial.print(".");
     logFileIdx++;
     logFileName = "LOG";
     if(logFileIdx < 10)
@@ -480,18 +516,19 @@ void OpenDataFile()
     }
     else
     {
-       Serial.println("Delete some files!");
+      Serial.println("Delete some files!");
+      digitalWrite(READYPIN, LOW);
       while(true){}
     }
     logFileName += ".YLG";
-    Serial.print("Testing ");
-    Serial.println(logFileName);
   }
-  Serial.print("Opening ");
+  Serial.print(" opening ");
   Serial.println(logFileName);
   dataFile = SD.open(logFileName, FILE_WRITE);
-  /**/
 }
+//
+// close the open data file
+//
 void CloseDataFile()
 {
   Serial.print("Closing ");
