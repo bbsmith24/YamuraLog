@@ -50,8 +50,8 @@
 #define I2CATOD 2
 #define I2CDIGITAL 3
 #define I2CCOUNTER 4
-#define STDMODE     // 100K bus
-//#define FASTMODE    // 400K bus
+//#define STDMODE     // 100K bus
+#define FASTMODE    // 400K bus
 
 // for quick conversion between numeric and byte values
 union DataPacket
@@ -255,7 +255,7 @@ void CheckStart()
     CloseDataFile();
     loggerRun = false;
     runmsg = true;
-    delay(1000);
+    delay(500);
   }
   // pressed, was stop. start and open next file
   else if((buttonVal == LOW) && (loggerRun == false))
@@ -265,6 +265,7 @@ void CheckStart()
     OpenDataFile();
     loggerRun = true;
     waitmsg = true;
+    delay(500);
   }
   // released
   else if(buttonVal == HIGH)
@@ -333,7 +334,7 @@ void CheckSensors()
     }
     else if (deviceType[deviceIdx] == ACCEL)
     {
-      Serial.print(" ACCEL ");
+      Serial.print(" ACC ");
       // invalid data from accelerometer - skip
       if (!accel.available()) 
       {
@@ -448,7 +449,7 @@ void LogGPSData(int deviceIdx)
 void LogI2CAnalog(int deviceIdx)
 {
   channelID.ul = deviceIdx;
-  dataFile.print("A");
+  dataFile.print("A2D");
   dataFile.write(channelID.c, 4);
   dataFile.write(deviceVal[deviceIdx].c, 4);
   dataFile.flush();
@@ -459,7 +460,7 @@ void LogI2CAnalog(int deviceIdx)
 void LogI2CDigital(int deviceIdx)
 {
   channelID.ul = deviceIdx;
-  dataFile.print("D");
+  dataFile.print("DIG");
   dataFile.write(channelID.c, 4);
   dataFile.write(deviceVal[deviceIdx].c, 4);
   dataFile.flush();
@@ -470,7 +471,7 @@ void LogI2CDigital(int deviceIdx)
 void LogI2CCounter(int deviceIdx)
 {
   channelID.ul = deviceIdx;
-  dataFile.print("C");
+  dataFile.print("CNT");
   dataFile.write(channelID.c, 4);
   dataFile.write(deviceVal[deviceIdx].c, 4);
   dataFile.flush();
