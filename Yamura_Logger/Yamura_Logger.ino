@@ -22,6 +22,10 @@
 // device info
 #define ANALOG1 0x08
 
+// 4 (1 channel) or 8 (2 channel) A2D message length
+#define A2D_MSG_LEN 4
+//#define A2D_MSG_LEN 8
+
 // user i/o
 #define STARTBUTTON 9     // start/stop button
 #define GPSPIN      5  // GPS Status LED
@@ -137,17 +141,17 @@ void LogData()
 
   // request  bytes from slave device
   // slave may send less than requested
-  if(Wire.requestFrom(0x08, 4) == 4)
+  if(Wire.requestFrom(0x08, A2D_MSG_LEN) == A2D_MSG_LEN)
   {
     dataFile.print("A2D");
     i2cData.ul = 0;
     dataFile.write(i2cData.c, 4);
-    for(int byteCnt = 0; byteCnt < 4; byteCnt++) 
+    for(int byteCnt = 0; byteCnt < A2D_MSG_LEN; byteCnt++) 
     {
       // receive a byte as character
       i2cData.c[byteCnt] = Wire.read(); 
     }
-    dataFile.write(i2cData.c, 4);
+    dataFile.write(i2cData.c, A2D_MSG_LEN);
   }
   //Serial.print(" ACC ");
   if (accel.available()) 
