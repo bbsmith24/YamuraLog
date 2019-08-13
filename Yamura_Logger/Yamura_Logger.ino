@@ -22,9 +22,10 @@
 // device info
 #define ANALOG1 0x08
 
-// 4 (1 channel) or 8 (2 channel) A2D message length
-#define A2D_MSG_LEN 4
-//#define A2D_MSG_LEN 8
+// 4 (1 channel), 8 (2 channel), 12 (3 channel) A2D message length
+//#define A2D_MSG_BLOCK 1
+//#define A2D_MSG_BLOCK 2
+#define A2D_MSG_BLOCK 3
 
 // user i/o
 #define STARTBUTTON 9     // start/stop button
@@ -41,12 +42,12 @@ void LogData();
 // union for i2c data
 union DataPacket
 {
-  float f;          // 4 bytes
-  unsigned long ul; // 4 bytes
-  long sl;          // 4 bytes
-  word uw[2];       // 2 x 2bytes           
-  int  sw[2];       // 2 x 2bytes           
-  char c[4];        // 4 bytes
+  float f[A2D_MSG_BLOCK];          // 4 bytes per MSG_BLOCK
+  unsigned long ul[A2D_MSG_BLOCK]; // 4 bytes per MSG_BLOCK
+  long sl[A2D_MSG_BLOCK];          // 4 bytes per MSG_BLOCK
+  word uw[A2D_MSG_BLOCK][2];       // 2 x 2 bytes per MSG_BLOCK 
+  int  sw[A2D_MSG_BLOCK][2];       // 2 x 2 bytes per MSG_BLOCK         
+  char c[A2D_MSG_BLOCK][4];        // 4 bytes per MSG_BLOCK
 };
 
 // log file info
@@ -136,35 +137,47 @@ void loop()
 void LogData()
 {
   dataFile.print("T");
-  i2cData.ul = micros();
-  dataFile.write(i2cData.c, 4);
+  i2cData.ul[0] = micros();
+  dataFile.write(i2cData.c[0], 4);
 
   // request  bytes from slave device
   // slave may send less than requested
-  if(Wire.requestFrom(0x08, A2D_MSG_LEN) == A2D_MSG_LEN)
+  int a2dcnt = Wire.requestFrom(ANALOG1, A2D_MSG_BLOCK * 4);
+  if(a2dcnt == (A2D_MSG_BLOCK * 4))
   {
-    dataFile.print("A2D");
-    i2cData.ul = 0;
-    dataFile.write(i2cData.c, 4);
-    for(int byteCnt = 0; byteCnt < A2D_MSG_LEN; byteCnt++) 
+    for(int msgCnt = 0; msgCnt < A2D_MSG_BLOCK; msgCnt++) 
     {
-      // receive a byte as character
-      i2cData.c[byteCnt] = Wire.read(); 
+      Serial.print("A2D");
+      Serial.print(msgCnt);
+      dataFile.print("A2D");
+      i2cData.ul[0] = msgCnt;
+      dataFile.write(i2cData.c[0], 4);
+      for(int byteCnt = 0; byteCnt < 4; byteCnt++) 
+      {
+        // receive a byte as character
+        i2cData.c[0][byteCnt] = Wire.read(); 
+      }
+      Serial.print(i2cData.ul[0]);
+      dataFile.write(i2cData.c[0], 4);
     }
-    dataFile.write(i2cData.c, A2D_MSG_LEN);
+    Serial.println("");
+  }
+  else if (a2dcnt != (A2D_MSG_BLOCK * 4))
+  {
+    Serial.println("received " + String(a2dcnt) + " bytes");  
   }
   //Serial.print(" ACC ");
   if (accel.available()) 
   {
     dataFile.print("ACC");
-    i2cData.ul = 1;
-    dataFile.write(i2cData.c, 4);
-    i2cData.f = accel.getCalculatedX();
-    dataFile.write(i2cData.c, 4);
-    i2cData.f = accel.getCalculatedY();
-    dataFile.write(i2cData.c, 4);
-    i2cData.f = accel.getCalculatedZ();
-    dataFile.write(i2cData.c, 4);
+    i2cData.ul[0] = 1;
+    dataFile.write(i2cData.c[0], 4);
+    i2cData.f[0] = accel.getCalculatedX();
+    dataFile.write(i2cData.c[0], 4);
+    i2cData.f[0] = accel.getCalculatedY();
+    dataFile.write(i2cData.c[0], 4);
+    i2cData.f[0] = accel.getCalculatedZ();
+    dataFile.write(i2cData.c[0], 4);
   }
 
   //Serial.print(" GPS ");
@@ -172,8 +185,8 @@ void LogData()
   {
     char c;
     dataFile.print("GPS");
-    i2cData.ul = 2;
-    dataFile.write(i2cData.c, 4);
+    i2cData.ul[0] = 2;
+    dataFile.write(i2cData.c[0], 4);
     // read NMEA sentence and write to log - easier to deal with on the viewer side
     while (myI2CGPS.available()) //available() returns the number of new bytes available from the GPS module
     {
