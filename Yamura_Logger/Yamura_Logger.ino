@@ -26,8 +26,8 @@
 #define DEBUG
 
 // I2C info (pick 1)
-#define STDMODE   // 100K
-//#define FASTMODE  // 400K
+//#define STDMODE   // 100K
+#define FASTMODE  // 400K
 
 // device info
 #define ANALOG1 0x08
