@@ -1,11 +1,20 @@
 /*
  UNO/Redboard
+ * microSD sheild connects to SPI
+ * 
+ *         Uno      RedboardT
+ ** MOSI - pin 11*  SPI/MOSI
+ ** MISO - pin 12   SPI/MISO
+ ** CLK -  pin 13   SPI/CLK
+ ** CS -   pin  8   8
 
   start/stop D9
   LEDs       D5-D7
     
   A2D, digital, counter, GPS, accelerometer, IMU I2C sensors on QWIIC bus
 */
+#define Serial SerialUSB
+
 #include <Wire.h>                                     // TWI I2C device
 #include <SPI.h>
 #include <SD.h>
@@ -14,6 +23,7 @@
 
 // SD card
 #define CHIPSELECT 8
+#define DEBUG
 
 // I2C info (pick 1)
 #define STDMODE   // 100K
@@ -28,10 +38,10 @@
 #define A2D_MSG_BLOCK 3
 
 // user i/o
-#define STARTBUTTON 9     // start/stop button
-#define GPSPIN      5  // GPS Status LED
-#define READYPIN    6  // Accel Status LED
-#define LOGGERPIN   7  // Logger Status LED
+#define GPSPIN      2  // GPS Status LED
+#define READYPIN    3  // Accel Status LED
+#define LOGGERPIN   4  // Logger Status LED
+#define STARTBUTTON 5     // start/stop button
 
 // function declarations
 void OpenDataFile();
@@ -60,6 +70,7 @@ I2CGPS myI2CGPS;        // hook gps object to the library
 bool logging = false;
 bool waitmsg = true;
 bool runmsg = true;
+String logFileName = "LOG0000.YLG";
 
 void setup() 
 {
@@ -72,7 +83,11 @@ void setup()
   digitalWrite(READYPIN, LOW);
   digitalWrite(LOGGERPIN, LOW);
   // Open serial communications and wait for port to open:
-  Serial.begin(9600);
+  Serial.begin(115200);  
+  #ifdef DEBUG
+  while (!Serial) { ; }   // wait for serial port to connect. Needed for native USB port only
+  #endif
+
   // see if the card is present and can be initialized
   // mostly likely failure is no card, so flash all LEDs to let user know
   while (!SD.begin(CHIPSELECT)) 
@@ -255,7 +270,6 @@ void LogData()
 void OpenDataFile()
 {
   int logFileIdx = 0;
-  String logFileName = "LOG0000.YLG";
   while(SD.exists(logFileName))
   {
     logFileIdx++;
@@ -283,6 +297,11 @@ void OpenDataFile()
     }
     logFileName += ".YLG";
   }
+  #ifdef DEBUG
+  Serial.print("Opening ");
+  Serial.println(logFileName);
+  #endif
+
   dataFile = SD.open(logFileName, FILE_WRITE);
 }
 //
@@ -302,19 +321,101 @@ void CheckStart()
   // pressed, was running. stop and close file
   if((buttonVal == LOW) && (logging == true))
   {
+    #ifdef DEBUG
+    Serial.println("Stop");
+    #endif
     digitalWrite(LOGGERPIN, LOW);
     CloseDataFile();
     logging = false;
     runmsg = true;
     delay(500);
   }
-  // pressed, was stop. start and open next file
-  else if((buttonVal == LOW) && (logging == false))
+  // pressed, was stopped. start and open next file
+  else if(logging == false)
   {
-    digitalWrite(LOGGERPIN, HIGH);
-    OpenDataFile();
-    logging = true;
-    waitmsg = true;
-    delay(500);
+    if(buttonVal == LOW)
+    {
+      digitalWrite(LOGGERPIN, HIGH);
+      #ifdef DEBUG
+      Serial.println("Start");
+      #endif
+
+      OpenDataFile();
+      logging = true;
+      waitmsg = true;
+      delay(500);
+      #ifdef DEBUG
+      Serial.println("Logging");
+      #endif
+    }
+    else
+    {
+      if (Serial.available() > 0) 
+      {
+        int incomingByte = 0;
+        while(Serial.available() > 0) 
+        {
+          incomingByte = Serial.read();
+        }
+        UploadDataFiles();
+      }
+    }
   }
+}
+void UploadDataFiles()
+{
+  int fileModeByte;
+  int incomingByte;
+  // all log files are in root folder
+  File root;
+  File entry;
+  root = SD.open("/");
+  
+  while(true)
+  {
+    entry = root.openNextFile();
+    if(!entry)
+    {
+      break;
+    }
+    // send file name to PC
+    logFileName = entry.name();
+    String testName = logFileName;
+    if((testName.endsWith("YLG")) || 
+       (testName.endsWith("TXT")) || 
+       (testName.endsWith("ylg")) ||
+       (testName.endsWith("txt")))
+    {
+      Serial.println(logFileName);
+      // wait for response 
+      // U = upload
+      // D = upload then delete
+      // X = delete
+      // ignore anything else (skips the file)
+      while(Serial.available() == 0) 
+      { ; }
+      fileModeByte = Serial.read();
+      if((fileModeByte == 'U') || (fileModeByte == 'D'))
+      {
+        // re-open the file for reading:
+        dataFile = SD.open(logFileName);
+        // read from the file until there's nothing else in it:
+        while (dataFile.available()) 
+        {
+          Serial.write(dataFile.read());
+        }
+        // close the file:
+        dataFile.close();
+        // wait for handshake at end
+        while(Serial.available() == 0) 
+        { ; }
+        incomingByte = Serial.read();
+      }
+      if((fileModeByte == 'D') || (fileModeByte == 'X'))
+      {
+        SD.remove(logFileName);
+      }
+    }
+  } 
+  root.close();
 }
