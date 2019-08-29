@@ -13,6 +13,7 @@
     
   A2D, digital, counter, GPS, accelerometer, IMU I2C sensors on QWIIC bus
 */
+// for Redboard Turbo serial com
 #define Serial SerialUSB
 
 #include <Wire.h>                                     // TWI I2C device
@@ -23,11 +24,11 @@
 
 // SD card
 #define CHIPSELECT 8
-#define DEBUG
+//#define DEBUG
 
 // I2C info (pick 1)
-//#define STDMODE   // 100K
-#define FASTMODE  // 400K
+#define STDMODE   100000 // 100K
+#define FASTMODE  400000 // 400K
 
 // device info
 #define ANALOG1 0x08
@@ -107,14 +108,8 @@ void setup()
   digitalWrite(LOGGERPIN, LOW);
 
   Wire.begin(); 
-  #ifdef STDMODE
-  Serial.println("I2C clock 100K");
-  Wire.setClock(100000); // standard mode
-  #endif
-  #ifdef FASTMODE
-  Serial.println("I2C clock 400K");
-  Wire.setClock(400000);  // fast mode
-  #endif
+  //Serial.println("I2C clock " + FASTMODE);
+  Wire.setClock(FASTMODE);
 
   if(accel.begin() == false)
   {
