@@ -24,7 +24,7 @@
 
 // SD card
 #define CHIPSELECT 8
-//#define DEBUG
+//#define DEBUGSTR
 
 // I2C info (pick 1)
 #define STDMODE   100000 // 100K
@@ -85,7 +85,7 @@ void setup()
   digitalWrite(LOGGERPIN, LOW);
   // Open serial communications and wait for port to open:
   Serial.begin(115200);  
-  #ifdef DEBUG
+  #ifdef DEBUGSTR
   while (!Serial) { ; }   // wait for serial port to connect. Needed for native USB port only
   #endif
 
@@ -292,7 +292,7 @@ void OpenDataFile()
     }
     logFileName += ".YLG";
   }
-  #ifdef DEBUG
+  #ifdef DEBUGSTR
   Serial.print("Opening ");
   Serial.println(logFileName);
   #endif
@@ -316,7 +316,7 @@ void CheckStart()
   // pressed, was running. stop and close file
   if((buttonVal == LOW) && (logging == true))
   {
-    #ifdef DEBUG
+    #ifdef DEBUGSTR
     Serial.println("Stop");
     #endif
     digitalWrite(LOGGERPIN, LOW);
@@ -331,7 +331,7 @@ void CheckStart()
     if(buttonVal == LOW)
     {
       digitalWrite(LOGGERPIN, HIGH);
-      #ifdef DEBUG
+      #ifdef DEBUGSTR
       Serial.println("Start");
       #endif
 
@@ -339,7 +339,7 @@ void CheckStart()
       logging = true;
       waitmsg = true;
       delay(500);
-      #ifdef DEBUG
+      #ifdef DEBUGSTR
       Serial.println("Logging");
       #endif
     }
