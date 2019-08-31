@@ -36,7 +36,7 @@
 // 4 (1 channel), 8 (2 channel), 12 (3 channel) A2D message length
 //#define A2D_MSG_BLOCK 1
 //#define A2D_MSG_BLOCK 2
-#define A2D_MSG_BLOCK 3
+#define A2D_MSG_BLOCK 4
 
 // user i/o
 #define GPSPIN      2  // GPS Status LED
