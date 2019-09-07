@@ -24,7 +24,9 @@
 
 // SD card
 #define CHIPSELECT 8
-//#define DEBUGSTR
+
+// debug messages to serial
+#define DEBUGSTR
 
 // I2C info (pick 1)
 #define STDMODE   100000 // 100K
@@ -59,6 +61,12 @@ union DataPacket
   word uw[A2D_MSG_BLOCK][2];       // 2 x 2 bytes per MSG_BLOCK 
   int  sw[A2D_MSG_BLOCK][2];       // 2 x 2 bytes per MSG_BLOCK         
   char c[A2D_MSG_BLOCK][4];        // 4 bytes per MSG_BLOCK
+};
+
+union IntPacket
+{
+  int  intVal;
+  char charBuf[4];
 };
 
 // log file info
@@ -181,14 +189,14 @@ void LogWrite(char* b, int len)
 }
 void LogData()
 {
-  //dataFile.print("T");
+  // timestamp
   LogPrint("T");
   i2cData.ul[0] = micros();
-  //dataFile.write(i2cData.c[0], 4);
   LogWrite(i2cData.c[0], 4);
 
   // request  bytes from slave device
   // slave may send less than requested
+  // this is the 4 channel cockpit sensor pack
   int a2dcnt = Wire.requestFrom(ANALOG1, A2D_MSG_BLOCK * 4);
   int byteIdx = 0;
   if(a2dcnt == (A2D_MSG_BLOCK * 4))
@@ -205,33 +213,12 @@ void LogData()
       channelNum.ul[0] = msgCnt;
       LogWrite(channelNum.c[0], 4);
       LogWrite(i2cData.c[0], 4);
-      /*
-       * 
-      Serial.print("A2D");
-      Serial.print(msgCnt);
-      Serial.print(" ");
-      Serial.print(i2cData.ul[0]);
-      Serial.print(" ");
-      Serial.print(i2cData.c[0]);
-      Serial.print(" ");
-      Serial.print(i2cData.c[1]);
-      Serial.print(" ");
-      Serial.print(i2cData.c[2]);
-      Serial.print(" ");
-      Serial.print(i2cData.c[3]);
-      Serial.print(" ");
-      */
     }
-    //Serial.println("");
   }
-  //else if (a2dcnt != (A2D_MSG_BLOCK * 4))
-  //{
-  //  Serial.println("received " + String(a2dcnt) + " bytes");  
-  //}
-  //Serial.print(" ACC ");
+  // accelerometer
   if (accel.available()) 
   {
-    LogPrint("ACC");//dataFile.print("ACC");
+    LogPrint("ACC");
     i2cData.ul[0] = 1;
     LogWrite(i2cData.c[0], 4);//dataFile.write(i2cData.c[0], 4);
     i2cData.f[0] = accel.getCalculatedX();
@@ -241,8 +228,7 @@ void LogData()
     i2cData.f[0] = accel.getCalculatedZ();
     LogWrite(i2cData.c[0], 4);//dataFile.write(i2cData.c[0], 4);
   }
-
-  //Serial.print(" GPS ");
+  // GPS
   if(myI2CGPS.available()>0) //available() returns the number of new bytes available from the GPS module
   {
     char c;
@@ -256,6 +242,7 @@ void LogData()
       LogPrint(c);//dataFile.print(c);
     }
   }
+  // push data to SD card
   dataFile.flush();
 }
 //
@@ -264,26 +251,43 @@ void LogData()
 //
 void OpenDataFile()
 {
-  int logFileIdx = 0;
-  while(SD.exists(logFileName))
+  IntPacket logFileIdx;
+  //int logFileIdx = 0;
+  logFileIdx.intVal = 0;
+  File counterFile;
+  if(SD.exists("logCount.ini"))
   {
-    logFileIdx++;
+    counterFile = SD.open("logCount.ini", FILE_READ);
+    counterFile.read(logFileIdx.charBuf, 4);
+    counterFile.close();   
+    logFileIdx.intVal = logFileIdx.intVal; 
+    SD.remove("logCount.ini");
+ 
+    #ifdef DEBUGSTR
+    Serial.print("Log index from  file ");
+    Serial.println(logFileIdx.intVal);
+    #endif
+  }
+  do
+  //while(SD.exists(logFileName))
+  {
+    logFileIdx.intVal++;
     logFileName = "LOG";
-    if(logFileIdx < 10)
+    if(logFileIdx.intVal < 10)
     {
-      logFileName += "000" + String(logFileIdx);
+      logFileName += "000" + String(logFileIdx.intVal);
     }
-    else if(logFileIdx < 100)
+    else if(logFileIdx.intVal < 100)
     {
-      logFileName += "00" + String(logFileIdx);
+      logFileName += "00" + String(logFileIdx.intVal);
     }
-    else if(logFileIdx < 1000)
+    else if(logFileIdx.intVal < 1000)
     {
-      logFileName += "0" + String(logFileIdx);
+      logFileName += "0" + String(logFileIdx.intVal);
     }
-    else if(logFileIdx < 10000)
+    else if(logFileIdx.intVal < 10000)
     {
-      logFileName += String(logFileIdx);
+      logFileName += String(logFileIdx.intVal);
     }
     else
     {
@@ -291,11 +295,14 @@ void OpenDataFile()
       while(true){}
     }
     logFileName += ".YLG";
-  }
+  } while(SD.exists(logFileName));
   #ifdef DEBUGSTR
   Serial.print("Opening ");
   Serial.println(logFileName);
   #endif
+  counterFile = SD.open("logCount.ini", FILE_WRITE);
+  counterFile.write(logFileIdx.charBuf, 4);
+  counterFile.close();    
 
   dataFile = SD.open(logFileName, FILE_WRITE);
 }
@@ -325,9 +332,10 @@ void CheckStart()
     runmsg = true;
     delay(500);
   }
-  // pressed, was stopped. start and open next file
+  // logging stopped
   else if(logging == false)
   {
+    // button pressed. open next file and start logging
     if(buttonVal == LOW)
     {
       digitalWrite(LOGGERPIN, HIGH);
@@ -343,6 +351,7 @@ void CheckStart()
       Serial.println("Logging");
       #endif
     }
+    // no button press - check for serial input from computer
     else
     {
       if (Serial.available() > 0) 
@@ -352,12 +361,13 @@ void CheckStart()
         {
           incomingByte = Serial.read();
         }
-        UploadDataFiles();
+        // manage data files on card
+        ManageDataFiles();
       }
     }
   }
 }
-void UploadDataFiles()
+void ManageDataFiles()
 {
   int fileModeByte;
   int incomingByte;
@@ -386,10 +396,12 @@ void UploadDataFiles()
       // U = upload
       // D = upload then delete
       // X = delete
+      // L = list
       // ignore anything else (skips the file)
       while(Serial.available() == 0) 
       { ; }
       fileModeByte = Serial.read();
+      // upload or upload and delete
       if((fileModeByte == 'U') || (fileModeByte == 'D'))
       {
         // re-open the file for reading:
@@ -406,9 +418,15 @@ void UploadDataFiles()
         { ; }
         incomingByte = Serial.read();
       }
+      // delete after upload, or clearing all
       if((fileModeByte == 'D') || (fileModeByte == 'X'))
       {
+        dataFile.close();
         SD.remove(logFileName);
+      }
+      if(fileModeByte == 'L')
+      {
+        dataFile.close();
       }
     }
   } 
