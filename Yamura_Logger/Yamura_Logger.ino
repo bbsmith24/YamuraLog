@@ -357,16 +357,48 @@ void CheckStart()
       if (Serial.available() > 0) 
       {
         int incomingByte = 0;
-        while(Serial.available() > 0) 
+        if(Serial.available() > 0) 
         {
           incomingByte = Serial.read();
         }
         // manage data files on card
-        ManageDataFiles();
+        if((char)incomingByte == 'A')
+        {
+          ManageDataFiles();
+        }
+        else if ((char)incomingByte == 'B')
+        {
+          ReceiveINIFile();
+        }
+        else if ((char)incomingByte == 'C')
+        {
+          SendINIFile();
+        }
       }
     }
   }
 }
+//
+// handshaking for upload/list/delete data file modes:
+// 1. remote sends 'A', recieved in CheckStart function above
+// 2. local sends first filename
+// 3. remote sends file mode (U, D, X, L)
+//     for U or D, local sends file 1 byte at a time
+//     for X or L, local deletes the file (X), or just continues ('L')
+// 4. remote sends 'A' when done
+// repeat until out of files on local. Local stops sending, remote sees nothing and stops recieving
+//
+// exected from computer
+// data files
+// U - upload all
+// D - upload and delete all
+// X - delete all
+// L - list all
+// 
+// ini files
+// 
+//
+// 
 void ManageDataFiles()
 {
   int fileModeByte;
@@ -375,10 +407,20 @@ void ManageDataFiles()
   File root;
   File entry;
   root = SD.open("/");
-  
+
+  for(int i = 0; i < 1; i++)
+  {
+    digitalWrite(READYPIN, HIGH);
+    delay(100);
+    digitalWrite(READYPIN, LOW);
+    delay(50);
+  }
+  digitalWrite(READYPIN, HIGH);
+
   while(true)
   {
     entry = root.openNextFile();
+    // out of files, stop sending
     if(!entry)
     {
       break;
@@ -431,4 +473,66 @@ void ManageDataFiles()
     }
   } 
   root.close();
+}
+//
+// handshaking for receiving an ini file
+// 1. remote sends 'B', recieved in CheckStart function above
+// 2. local creates Yamura.ini (to replace existing file)
+// 3. remote sends 1 character at a time and writes to file
+// 4. remote sends 'ZZZ' to end transmission
+// 5. local closes Yamura.ini file
+//
+void ReceiveINIFile()
+{
+  for(int i = 0; i < 2; i++)
+  {
+    digitalWrite(READYPIN, HIGH);
+    delay(100);
+    digitalWrite(READYPIN, LOW);
+    delay(100);
+  }
+  digitalWrite(READYPIN, HIGH);
+
+  int incomingByte = 0;
+  SD.remove("Yamura.ini");
+  dataFile = SD.open("Yamura.ini", FILE_WRITE);
+  while(Serial.available()==0)
+  {}
+  while(Serial.available())
+  {
+    incomingByte = Serial.read();
+    dataFile.write((byte)incomingByte);
+  }
+  dataFile.close();
+}
+//
+// handshaking for sending an ini file
+// 1. remote sends 'C', recieved in CheckStart function above
+// 2. local opens Yamura.ini
+// 4. local sends 1 character at a time
+// 5. local closes Yamura.ini - remote times out
+//
+void SendINIFile()
+{
+  for(int i = 0; i < 3; i++)
+  {
+    digitalWrite(READYPIN, HIGH);
+    delay(100);
+    digitalWrite(READYPIN, LOW);
+    delay(200);
+  }
+  digitalWrite(READYPIN, HIGH);
+
+  if(SD.exists("Yamura.ini"))
+  {
+    // re-open the file for reading:
+    dataFile = SD.open("Yamura.ini");
+    // read from the file until there's nothing else in it:
+    while (dataFile.available()) 
+    {
+      Serial.write(dataFile.read());
+    }
+    // close the file:
+    dataFile.close();
+  }
 }
