@@ -26,7 +26,7 @@
 #define CHIPSELECT 8
 
 // debug messages to serial
-#define DEBUGSTR
+//#define DEBUGSTR
 
 // I2C info (pick 1)
 #define STDMODE   100000 // 100K
@@ -94,7 +94,18 @@ void setup()
   // Open serial communications and wait for port to open:
   Serial.begin(115200);  
   #ifdef DEBUGSTR
-  while (!Serial) { ; }   // wait for serial port to connect. Needed for native USB port only
+  // wait for serial port to connect. Needed for native USB port only
+  while (!Serial) 
+  { 
+    digitalWrite(GPSPIN, HIGH);
+    digitalWrite(READYPIN, HIGH);
+    digitalWrite(LOGGERPIN, HIGH);
+    delay(20);
+    digitalWrite(GPSPIN, LOW);
+    digitalWrite(READYPIN, LOW);
+    digitalWrite(LOGGERPIN, LOW);
+    delay(20);
+  }
   #endif
 
   // see if the card is present and can be initialized
@@ -352,6 +363,7 @@ void CheckStart()
       #endif
     }
     // no button press - check for serial input from computer
+    /**/
     else
     {
       if (Serial.available() > 0) 
@@ -376,6 +388,7 @@ void CheckStart()
         }
       }
     }
+    /**/
   }
 }
 //
