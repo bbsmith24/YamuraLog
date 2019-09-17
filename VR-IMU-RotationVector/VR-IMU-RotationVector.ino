@@ -70,22 +70,23 @@ void setup()
   #ifdef ACCEL
   myIMU.enableAccelerometer(50); //Send data update every 50ms
   Serial.println(F("Accelerometer  enabled"));
-  Serial.println(F("Output in form i j k real accuracy x y z"));
+  Serial.println(F("Output in form ts i j k real accuracy x y z"));
   
   dataFile.println(F("Accelerometer  enabled"));
-  dataFile.println(F("Output in form i j k real accuracy x y z"));
+  dataFile.println(F("Output in form ts i j k real accuracy x y z"));
   #endif
 
   #ifdef LINEAR
   myIMU.enableLinearAccelerometer(50); //Send data update every 50ms
   Serial.println(F("Linear Accelerometer  enabled"));
-  Serial.println(F("Output in form i j k real accuracy xl yl zl accuracy"));
+  Serial.println(F("Output in form ts i j k real accuracy xl yl zl accuracy"));
 
   dataFile.println(F("Linear Accelerometer  enabled"));
-  dataFile.println(F("Output in form i j k real accuracy xl yl zl accuracy"));
+  dataFile.println(F("Output in form ts i j k real accuracy xl yl zl accuracy"));
   #endif
 
   dataFile.flush();
+  //delay(10000);
 }
 
 void loop()
@@ -125,6 +126,8 @@ void loop()
     Serial.print(F("\t"));
     Serial.print(quatRadianAccuracy, 2);
 
+    dataFile.print(micros());
+    dataFile.print(F("\t"));
     dataFile.print(quatI, 2);
     dataFile.print(F("\t"));
     dataFile.print(quatJ, 2);
