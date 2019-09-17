@@ -19,14 +19,21 @@
   Plug the sensor onto the shield
   Serial.print it out at 9600 baud to serial monitor.
 */
-
+#include <SD.h>
 #include <Wire.h>
-
 #include "SparkFun_BNO080_Arduino_Library.h"
+
+//#define LINEAR
+#define ACCEL
+#define CHIPSELECT 8
+
 BNO080 myIMU;
+File dataFile;
 
 void setup()
 {
+  pinMode(LED_BUILTIN, OUTPUT);
+  
   Serial.begin(9600);
   Serial.println();
   Serial.println("BNO080 Read Example");
@@ -49,16 +56,41 @@ void setup()
     while (1);
   }
 
+  SD.begin(CHIPSELECT);
+  SD.remove("testIMU.txt");
+  dataFile = SD.open("testIMU.txt", FILE_WRITE);
+
   Wire.setClock(400000); //Increase I2C data rate to 400kHz
 
   myIMU.enableRotationVector(50); //Send data update every 50ms
 
   Serial.println(F("Rotation vector enabled"));
-  Serial.println(F("Output in form i, j, k, real, accuracy"));
+  dataFile.println(F("Rotation vector enabled"));
+  
+  #ifdef ACCEL
+  myIMU.enableAccelerometer(50); //Send data update every 50ms
+  Serial.println(F("Accelerometer  enabled"));
+  Serial.println(F("Output in form i j k real accuracy x y z"));
+  
+  dataFile.println(F("Accelerometer  enabled"));
+  dataFile.println(F("Output in form i j k real accuracy x y z"));
+  #endif
+
+  #ifdef LINEAR
+  myIMU.enableLinearAccelerometer(50); //Send data update every 50ms
+  Serial.println(F("Linear Accelerometer  enabled"));
+  Serial.println(F("Output in form i j k real accuracy xl yl zl accuracy"));
+
+  dataFile.println(F("Linear Accelerometer  enabled"));
+  dataFile.println(F("Output in form i j k real accuracy xl yl zl accuracy"));
+  #endif
+
+  dataFile.flush();
 }
 
 void loop()
 {
+  
   //Look for reports from the IMU
   if (myIMU.dataAvailable() == true)
   {
@@ -68,17 +100,80 @@ void loop()
     float quatReal = myIMU.getQuatReal();
     float quatRadianAccuracy = myIMU.getQuatRadianAccuracy();
 
+    #ifdef ACCEL
+    float x = myIMU.getAccelX();
+    float y = myIMU.getAccelY();
+    float z = myIMU.getAccelZ();
+    #endif
+
+    #ifdef LINEAR
+    float xl = myIMU.getLinAccelX();
+    float yl = myIMU.getLinAccelY();
+    float zl = myIMU.getLinAccelZ();
+    byte linAccuracy = myIMU.getLinAccelAccuracy();
+    #endif
+
+    Serial.print(micros());
+    Serial.print(F("\t"));
     Serial.print(quatI, 2);
-    Serial.print(F(","));
+    Serial.print(F("\t"));
     Serial.print(quatJ, 2);
-    Serial.print(F(","));
+    Serial.print(F("\t"));
     Serial.print(quatK, 2);
-    Serial.print(F(","));
+    Serial.print(F("\t"));
     Serial.print(quatReal, 2);
-    Serial.print(F(","));
+    Serial.print(F("\t"));
     Serial.print(quatRadianAccuracy, 2);
-    Serial.print(F(","));
+
+    dataFile.print(quatI, 2);
+    dataFile.print(F("\t"));
+    dataFile.print(quatJ, 2);
+    dataFile.print(F("\t"));
+    dataFile.print(quatK, 2);
+    dataFile.print(F("\t"));
+    dataFile.print(quatReal, 2);
+    dataFile.print(F("\t"));
+    dataFile.print(quatRadianAccuracy, 2);
+
+
+    #ifdef ACCEL
+    Serial.print(F("\t"));
+    Serial.print(x, 4);
+    Serial.print(F("\t"));
+    Serial.print(y, 4);
+    Serial.print(F("\t"));
+    Serial.print(z, 4);
+
+    dataFile.print(F("\t"));
+    dataFile.print(x, 4);
+    dataFile.print(F("\t"));
+    dataFile.print(y, 4);
+    dataFile.print(F("\t"));
+    dataFile.print(z, 4);
+    #endif
+    
+    #ifdef LINEAR
+    Serial.print(F("\t"));
+    Serial.print(xl, 4);
+    Serial.print(F("\t"));
+    Serial.print(yl, 4);
+    Serial.print(F("\t"));
+    Serial.print(zl, 4);
+    Serial.print(F("\t"));
+    Serial.print(linAccuracy, 4);
+    
+    dataFile.print(F("\t"));
+    dataFile.print(xl, 4);
+    dataFile.print(F("\t"));
+    dataFile.print(yl, 4);
+    dataFile.print(F("\t"));
+    dataFile.print(zl, 4);
+    dataFile.print(F("\t"));
+    dataFile.print(linAccuracy, 4);
+    #endif
 
     Serial.println();
+    dataFile.println();
+    dataFile.flush();
   }
 }
