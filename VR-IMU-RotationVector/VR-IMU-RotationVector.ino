@@ -26,9 +26,17 @@
 //#define LINEAR
 #define ACCEL
 #define CHIPSELECT 8
+#define DEBUGSTR
+
+union IntPacket
+{
+  int  intVal;
+  char charBuf[4];
+};
 
 BNO080 myIMU;
 File dataFile;
+String logFileName = "IMU0000.TXT";
 
 void setup()
 {
@@ -57,8 +65,7 @@ void setup()
   }
 
   SD.begin(CHIPSELECT);
-  SD.remove("testIMU.txt");
-  dataFile = SD.open("testIMU.txt", FILE_WRITE);
+  OpenDataFile();
 
   Wire.setClock(400000); //Increase I2C data rate to 400kHz
 
@@ -179,4 +186,65 @@ void loop()
     dataFile.println();
     dataFile.flush();
   }
+}
+//
+// find next available log file and open it
+// if there are too many files, quit
+//
+void OpenDataFile()
+{
+  IntPacket logFileIdx;
+  //int logFileIdx = 0;
+  logFileIdx.intVal = 0;
+  File counterFile;
+  if(SD.exists("logCount.ini"))
+  {
+    counterFile = SD.open("logCount.ini", FILE_READ);
+    counterFile.read(logFileIdx.charBuf, 4);
+    counterFile.close();   
+    logFileIdx.intVal = logFileIdx.intVal; 
+    SD.remove("logCount.ini");
+ 
+    #ifdef DEBUGSTR
+    Serial.print("Log index from  file ");
+    Serial.println(logFileIdx.intVal);
+    #endif
+  }
+  do
+  //while(SD.exists(logFileName))
+  {
+    logFileIdx.intVal++;
+    logFileName = "IMU";
+    if(logFileIdx.intVal < 10)
+    {
+      logFileName += "000" + String(logFileIdx.intVal);
+    }
+    else if(logFileIdx.intVal < 100)
+    {
+      logFileName += "00" + String(logFileIdx.intVal);
+    }
+    else if(logFileIdx.intVal < 1000)
+    {
+      logFileName += "0" + String(logFileIdx.intVal);
+    }
+    else if(logFileIdx.intVal < 10000)
+    {
+      logFileName += String(logFileIdx.intVal);
+    }
+    else
+    {
+      //Serial.println("Delete some files!");
+      while(true){}
+    }
+    logFileName += ".TXT";
+  } while(SD.exists(logFileName));
+  #ifdef DEBUGSTR
+  Serial.print("Opening ");
+  Serial.println(logFileName);
+  #endif
+  counterFile = SD.open("logCount.ini", FILE_WRITE);
+  counterFile.write(logFileIdx.charBuf, 4);
+  counterFile.close();    
+
+  dataFile = SD.open(logFileName, FILE_WRITE);
 }
