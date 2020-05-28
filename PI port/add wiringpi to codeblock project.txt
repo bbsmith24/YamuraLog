@@ -1,0 +1,11 @@
+Tim, sorry I'm noob in Linux World.. And Linux hates me..
+
+I finally figured it out thanks to this link you provided: http://wiki.codeblocks.org/index.php?title=FAQ-Compiling_%28general%29#Q:_I_would_like_to_compile_a_project_using_some_non-standard_libraries._How_can_I_indicate_to_CodeBlocks_that_these_libraries_and_include_files_exist.3F
+
+
+So what I done is simple but only when you know what to do.. Maybe useful for others using wiringPi
+
+1/ Start CodeBlocks as root: gksu codeblocks - needed for libwiringPi to be working..
+2/ Add the libwiringPi.so in Menu Settings/Compiler and debugger/Linker settings > Link libraries > Add... library found in /usr/lib/libwiringPi.so
+3/ Write own code..
+4/ Compile, link and run application!
