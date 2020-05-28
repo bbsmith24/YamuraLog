@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="YamuraLog_Test" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/LSM9D_Test" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/LSM9D_Test" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-fexceptions" />
+		</Compiler>
+		<Unit filename="ADS1015/ADS1015_Library.cpp" />
+		<Unit filename="ADS1015/ADS1015_Library.h" />
+		<Unit filename="BNO080/BNO080_Library.cpp" />
+		<Unit filename="BNO080/BNO080_Library.h" />
+		<Unit filename="I2C_Library/I2C_Library.cpp" />
+		<Unit filename="I2C_Library/I2C_Library.h" />
+		<Unit filename="LSM9D/LSM9D_Library.cpp" />
+		<Unit filename="LSM9D/LSM9D_Library.h" />
+		<Unit filename="LSM9D/LSM9D_Registers.h" />
+		<Unit filename="LSM9D/LSM9D_Types.h" />
+		<Unit filename="SX1509/SX1509_Library.cpp" />
+		<Unit filename="SX1509/SX1509_Library.h" />
+		<Unit filename="SX1509/SX1509_Registers.h" />
+		<Unit filename="SX1509/SX1509_Types.h" />
+		<Unit filename="main.cpp" />
+		<Extensions>
+			<code_completion />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
