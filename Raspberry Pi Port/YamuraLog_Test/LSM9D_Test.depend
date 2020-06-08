@@ -1,0 +1,100 @@
+# depslib dependency file v1.0
+1590263966 source:/home/pi/C Programming/YamuraLog/LSM9D_Test/LSM9D_Library.cpp
+	<time.h>
+	"LSM9D_Types.h"
+	"LSM9D_Library.h"
+	"LSM9D_Registers.h"
+
+1590263723 /home/pi/C Programming/YamuraLog/LSM9D_Test/LSM9D_Library.h
+	<stdio.h>
+	<stdlib.h>
+	<stdint.h>
+	"LSM9DS1_Registers.h"
+	"LSM9DS1_Types.h"
+	"I2C_Library.h"
+
+1590243560 /home/pi/C Programming/YamuraLog/LSM9D_Test/LSM9D_Registers.h
+	<stdint.h>
+
+1590263235 /home/pi/C Programming/YamuraLog/LSM9D_Test/LSM9D_Types.h
+	<stdint.h>
+	"LSM9D_Registers.h"
+
+1590362006 source:/home/pi/C Programming/YamuraLog/LSM9D_Test/main.cpp
+	<stdio.h>
+	<stdlib.h>
+	<errno.h>
+	<time.h>
+	<sys/time.h>
+	<unistd.h>
+	"LSM9D/LSM9D_Library.h"
+	"BNO080/BNO080_Library.h"
+	"SX1509/SX1509_Library.h"
+
+1590331560 source:/home/pi/C Programming/YamuraLog/LSM9D_Test/I2C_Library.cpp
+	"I2C_Library.h"
+
+1590250442 /home/pi/C Programming/YamuraLog/LSM9D_Test/I2C_Library.h
+	<stdio.h>
+	<stdlib.h>
+	<stdint.h>
+	<unistd.h>
+	<wiringPi.h>
+	<wiringPiI2C.h>
+
+1590330926 source:/home/pi/C Programming/YamuraLog/LSM9D_Test/BNO080/BNO080_Library.cpp
+	"BNO080_Library.h"
+
+1590361503 /home/pi/C Programming/YamuraLog/LSM9D_Test/BNO080/BNO080_Library.h
+	<stdio.h>
+	<stdlib.h>
+	<stdint.h>
+	"math.h"
+	"../I2C_Library/I2C_Library.h"
+
+1590250442 /home/pi/C Programming/YamuraLog/LSM9D_Test/I2C_Library/I2C_Library.h
+	<stdio.h>
+	<stdlib.h>
+	<stdint.h>
+	<unistd.h>
+	<wiringPi.h>
+	<wiringPiI2C.h>
+
+1590331560 source:/home/pi/C Programming/YamuraLog/LSM9D_Test/I2C_Library/I2C_Library.cpp
+	"I2C_Library.h"
+
+1590263966 source:/home/pi/C Programming/YamuraLog/LSM9D_Test/LSM9D/LSM9D_Library.cpp
+	<time.h>
+	"LSM9D_Types.h"
+	"LSM9D_Library.h"
+	"LSM9D_Registers.h"
+
+1590263235 /home/pi/C Programming/YamuraLog/LSM9D_Test/LSM9D/LSM9D_Types.h
+	<stdint.h>
+	"LSM9D_Registers.h"
+
+1590243560 /home/pi/C Programming/YamuraLog/LSM9D_Test/LSM9D/LSM9D_Registers.h
+	<stdint.h>
+
+1590362006 /home/pi/C Programming/YamuraLog/LSM9D_Test/LSM9D/LSM9D_Library.h
+	<stdio.h>
+	<stdlib.h>
+	<stdint.h>
+	"LSM9DS1_Registers.h"
+	"LSM9DS1_Types.h"
+	"../I2C_Library/I2C_Library.h"
+
+1590352277 source:/home/pi/C Programming/YamuraLog/LSM9D_Test/SX1509/SX1509_Library.cpp
+
+1590362006 /home/pi/C Programming/YamuraLog/LSM9D_Test/SX1509/SX1509_Library.h
+	<stdio.h>
+	<stdlib.h>
+	<stdint.h>
+	"SX1509_Registers.h"
+	"SX1509_Types.h"
+	"../I2C_Library/I2C_Library.h"
+
+1590362006 /home/pi/C Programming/YamuraLog/LSM9D_Test/SX1509/SX1509_Registers.h
+
+1590362048 /home/pi/C Programming/YamuraLog/LSM9D_Test/SX1509/SX1509_Types.h
+
