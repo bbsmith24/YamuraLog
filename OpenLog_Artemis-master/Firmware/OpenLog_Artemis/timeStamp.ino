@@ -33,17 +33,6 @@ String getGPSDateTime() {
   {
     char gpsDate[11]; //10/12/2019
     if (settings.americanDateStyle == true)
-<<<<<<< HEAD
-      sprintf(gpsDate, "%02d/%02d/20%02d", month, day, year);
-    else
-      sprintf(gpsDate, "%02d/%02d/20%02d", day, month, year);
-    myTime += String(gpsDate);
-    myTime += ",";
-  }
-
-  char gpsTime[13]; //09:14:37.412
-  sprintf(gpsTime, "%02d:%02d:%02d.%03d", hour, minute, second, millis() % 1000); //TODO get GPS hundredths()
-=======
       sprintf(gpsDate, "(ts) Date: %02d/%02d/20%02d", month, day, year);
     else
       sprintf(gpsDate, "(ts) %02d/%02d/20%02d", day, month, year);
@@ -53,7 +42,6 @@ String getGPSDateTime() {
 
   char gpsTime[13]; //09:14:37.412
   sprintf(gpsTime, "Time: %02d:%02d:%02d.%03d", hour, minute, second, millis() % 1000); //TODO get GPS hundredths()
->>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
   myTime += String(gpsTime);
   myTime += ",";
 

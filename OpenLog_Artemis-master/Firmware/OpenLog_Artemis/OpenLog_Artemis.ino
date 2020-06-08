@@ -43,13 +43,9 @@ enum returnStatus {
 //Setup Qwiic Port
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <Wire.h>
-<<<<<<< HEAD
-TwoWire qwiic(1); //Will use pads 8/9
-=======
 #define qwiic Wire
 //TwoWire qwiic(1); //Will use pads 8/9
 //Wire qwiic;
->>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
 const byte PIN_QWIIC_POWER = 18;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -156,15 +152,12 @@ SCD30 co2Sensor_SCD30;
 //#include "MS8607_Library.h" //Click here to get the library: http://librarymanager/All#Qwiic_MS8607
 MS8607 pressureSensor_MS8607;
 
-<<<<<<< HEAD
-=======
 // SX1509 16 channel digital IO devices
 #include <SparkFunSX1509.h>
 SX1509 digitalIO[4];
 
 
 
->>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Global variables
@@ -186,12 +179,8 @@ const byte menuTimeout = 45; //Menus will exit/timeout after this number of seco
 
 #define DUMP(varname) {Serial.printf("%s: %llu\n", #varname, varname);}
 
-<<<<<<< HEAD
-void setup() {
-=======
 void setup() 
 {
->>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
   //If 3.3V rail drops below 3V, system will power down and maintain RTC
   pinMode(PIN_POWER_LOSS, INPUT);
   attachInterrupt(digitalPinToInterrupt(PIN_POWER_LOSS), powerDown, FALLING);
@@ -214,40 +203,6 @@ void setup()
 
   beginQwiic();
 
-<<<<<<< HEAD
-  analogReadResolution(14); //Increase from default of 10
-
-  beginDataLogging(); //180ms
-
-  beginSerialLogging(); //20 - 99ms
-
-  beginIMU(); //61ms
-
-  if (online.microSD == true) msg("SD card online");
-  else msg("SD card offline");
-
-  if (online.dataLogging == true) msg("Data logging online");
-  else msg("Datalogging offline");
-
-  if (online.serialLogging == true) msg("Serial logging online");
-  else msg("Serial logging offline");
-
-  if (online.IMU == true) msg("IMU online");
-  else msg("IMU offline");
-
-  if (settings.logMaxRate == true) Serial.println("Logging analog pins at max data rate");
-
-  if (settings.enableTerminalOutput == false && settings.logData == true) Serial.println("Logging to microSD card with no terminal output");
-
-  if (beginSensors() == true) Serial.println(beginSensorOutput); //159 - 865ms but varies based on number of devices attached
-  else msg("No sensors detected");
-
-  //If we are sleeping between readings then we cannot rely on millis() as it is powered down. Used RTC instead.
-  if (settings.usBetweenReadings >= maxUsBeforeSleep)
-    measurementStartTime = rtcMillis();
-  else
-    measurementStartTime = millis();
-=======
   Serial.println("analogReadResolution");
   analogReadResolution(14); //Increase from default of 10
 
@@ -324,20 +279,12 @@ void setup()
   {
     measurementStartTime = millis();
   }
->>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
 
   //Serial.printf("Setup time: %.02f ms\n", (micros() - startTime) / 1000.0);
 
   //If we are immediately going to go to sleep after the first reading then
   //first present the user with the config menu in case they need to change something
   if (settings.usBetweenReadings >= maxUsBeforeSleep)
-<<<<<<< HEAD
-    menuMain();
-}
-
-void loop() {
-  if (Serial.available()) menuMain(); //Present user menu
-=======
   {
     menuMain();
   }
@@ -349,7 +296,6 @@ void loop()
   {
     menuMain(); //Present user menu
   }
->>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
 
   if (settings.logSerial == true && online.serialLogging == true)
   {

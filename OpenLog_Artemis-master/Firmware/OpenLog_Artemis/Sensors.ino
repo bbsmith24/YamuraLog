@@ -1,10 +1,7 @@
 //Init / begin comm with all enabled sensors
 bool beginSensors()
 {
-<<<<<<< HEAD
-=======
   Serial.println("beginSensors to start active sensors");
->>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
   beginSensorOutput = "";
 
   //If no sensors are available then return
@@ -230,8 +227,6 @@ bool beginSensors()
     else
       beginSensorOutput += "MS8607 failed to respond. Check wiring.\n";
   }
-<<<<<<< HEAD
-=======
   if(qwiicAvailable.digitalIO_0 && settings.sensor_digitalIO_0.log && !qwiicOnline.digitalIO_0)
   {
     Serial.println("Initialize digitalIO_0 at 0x3E");
@@ -258,7 +253,6 @@ bool beginSensors()
   {
       beginSensorOutput += "SX1509 at 0x3E not available, not set for logging, or not online\n";
   }
->>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
 
   return true;
 }
@@ -281,13 +275,6 @@ void getData()
       if (settings.logDate)
       {
         char rtcDate[11]; //10/12/2019
-<<<<<<< HEAD
-        if (settings.americanDateStyle == true)
-          sprintf(rtcDate, "%02d/%02d/20%02d", myRTC.month, myRTC.dayOfMonth, myRTC.year);
-        else
-          sprintf(rtcDate, "%02d/%02d/20%02d", myRTC.dayOfMonth, myRTC.month, myRTC.year);
-        outputData += String(rtcDate) + ",";
-=======
         outputData += "(s) Date: ";
         if (settings.americanDateStyle == true)
         {
@@ -298,7 +285,6 @@ void getData()
           sprintf(rtcDate, "%02d/%02d/20%02d", myRTC.dayOfMonth, myRTC.month, myRTC.year);
         }
         outputData += String(rtcDate) + " ";
->>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
         helperText += "rtcDate,";
       }
 
@@ -310,10 +296,7 @@ void getData()
         {
           if (adjustedHour > 12) adjustedHour -= 12;
         }
-<<<<<<< HEAD
-=======
         outputData += "Time: ";
->>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
         sprintf(rtcTime, "%02d:%02d:%02d.%02d", adjustedHour, myRTC.minute, myRTC.seconds, myRTC.hundredths);
         outputData += String(rtcTime) + ",";
         helperText += "rtcTime,";
@@ -730,8 +713,6 @@ void getData()
       helperText += "degC,";
     }
   }
-<<<<<<< HEAD
-=======
   if(qwiicOnline.digitalIO_0 && settings.sensor_digitalIO_0.log)
   {
     outputData += " SX1509 (0x3E)";
@@ -752,7 +733,6 @@ void getData()
   {
     Serial.printf("SX1509 (0x3E) offline %d or not logging %d\n",qwiicOnline.digitalIO_0, settings.sensor_digitalIO_0.log);
   }
->>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
 
   if (settings.logHertz)
   {
