@@ -32,6 +32,7 @@ void menuMain()
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
 
     if (incoming == '1')
+<<<<<<< HEAD
       menuLogRate();
     else if (incoming == '2')
       menuTimeStamp();
@@ -45,6 +46,35 @@ void menuMain()
       menuAttachedDevices();
     else if (incoming == 'd')
       menuDebug();
+=======
+    {
+      menuLogRate();
+    }
+    else if (incoming == '2')
+    {
+      menuTimeStamp();
+    }
+    else if (incoming == '3')
+    {
+      menuIMU();
+    }
+    else if (incoming == '4')
+    {
+      menuSerialLogging();
+    }
+    else if (incoming == '5')
+    {
+      menuAnalogLogging();
+    }
+    else if (incoming == '6')
+    {
+      menuAttachedDevices();
+    }
+    else if (incoming == 'd')
+    {
+      menuDebug();
+    }
+>>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
     else if (incoming == 'r')
     {
       Serial.println("\n\rResetting to factory defaults. Continue? Press 'y':");
@@ -59,6 +89,7 @@ void menuMain()
         while (1);
       }
       else
+<<<<<<< HEAD
         Serial.println("Reset aborted");
     }
     else if (incoming == 'x')
@@ -67,6 +98,24 @@ void menuMain()
       break;
     else
       printUnknown(incoming);
+=======
+       {
+         Serial.println("Reset aborted");
+       }
+    }
+    else if (incoming == 'x')
+    {
+      break;
+    }
+//    else if (incoming == STATUS_GETBYTE_TIMEOUT)
+//    {
+//      break;
+//    }
+    else
+    {
+      printUnknown(incoming);
+    }
+>>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
   }
 
   recordSettings(); //Once all menus have exited, record the new settings to EEPROM and config file
