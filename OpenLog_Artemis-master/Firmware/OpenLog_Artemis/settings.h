@@ -130,6 +130,10 @@ struct struct_MS8607 {
   MS8607_humidity_resolution humidityResolution = MS8607_humidity_resolution_12b; //12-bit
 };
 
+<<<<<<< HEAD
+//This is all the settings that can be set on OpenLog. It's recorded to NVM and the config file.
+struct struct_settings {
+=======
 struct struct_digitalIO
 {
   bool log = true;
@@ -139,6 +143,7 @@ struct struct_digitalIO
 //This is all the settings that can be set on OpenLog. It's recorded to NVM and the config file.
 struct struct_settings 
 {
+>>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
   int sizeOfSettings = 0;
   int nextSerialLogNumber = 1;
   int nextDataLogNumber = 1;
@@ -194,10 +199,13 @@ struct struct_settings
   struct_MS5637 sensor_MS5637;
   struct_SCD30 sensor_SCD30;
   struct_MS8607 sensor_MS8607;
+<<<<<<< HEAD
+=======
   struct_digitalIO sensor_digitalIO_0;
   struct_digitalIO sensor_digitalIO_1;
   struct_digitalIO sensor_digitalIO_2;
   struct_digitalIO sensor_digitalIO_3;
+>>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
 } settings;
 
 //These are the devices on board OpenLog that may be on or offline.
@@ -225,10 +233,13 @@ struct struct_QwiicSensors {
   bool MS5637;
   bool SCD30;
   bool MS8607;
+<<<<<<< HEAD
+=======
   bool digitalIO_0;
   bool digitalIO_1;
   bool digitalIO_2;
   bool digitalIO_3;
+>>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
 };
 
 struct_QwiicSensors qwiicAvailable = {
@@ -247,10 +258,13 @@ struct_QwiicSensors qwiicAvailable = {
   .MS5637 = false,
   .SCD30 = false,
   .MS8607 = false,
+<<<<<<< HEAD
+=======
   .digitalIO_0 = false,
   .digitalIO_1 = false,
   .digitalIO_2 = false,
   .digitalIO_3 = false,
+>>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
 };
 
 struct_QwiicSensors qwiicOnline = {
@@ -269,6 +283,9 @@ struct_QwiicSensors qwiicOnline = {
   .MS5637 = false,
   .SCD30 = false,
   .MS8607 = false,
+<<<<<<< HEAD
+};
+=======
   .digitalIO_0 = false,
   .digitalIO_1 = false,
   .digitalIO_2 = false,
@@ -282,3 +299,4 @@ struct_QwiicSensors qwiicOnline = {
 
 
 int sx1509_Addresses[4] = {0x3E, 0x3F, 0x70, 0x71};
+>>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc

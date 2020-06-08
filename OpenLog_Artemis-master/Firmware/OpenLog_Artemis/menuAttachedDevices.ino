@@ -26,9 +26,13 @@ void menuAttachedDevices()
 
     //See what's on the I2C bus. Will set the qwiicAvailable bools.
     if (detectQwiicDevices() == false)
+<<<<<<< HEAD
+      Serial.println("**No devices detected on Qwiic bus**");
+=======
     {
       Serial.println("**No devices detected on Qwiic bus**");
     }
+>>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
 
     //Create array of pointers to the configure functions
     typedef void(*FunctionPointer)();
@@ -106,6 +110,8 @@ void menuAttachedDevices()
       functionPointers[availableDevices - 1] = menuConfigure_MS8607;
       Serial.printf("%d) MS8607 Pressure Humidity Temperature Sensor\n", availableDevices++);
     }
+<<<<<<< HEAD
+=======
     if (qwiicAvailable.digitalIO_0)
     {
       functionPointers[availableDevices - 1] = menuConfigure_digitalIO;
@@ -126,6 +132,7 @@ void menuAttachedDevices()
       functionPointers[availableDevices - 1] = menuConfigure_digitalIO;
       Serial.printf("%d) SX51090 Digital IO at 0x71\n", availableDevices++);
     }
+>>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
 
     functionPointers[availableDevices - 1] = menuConfigure_QwiicBus;
     Serial.printf("%d) Configure Qwiic Settings\n", availableDevices++);
@@ -162,6 +169,23 @@ bool detectQwiicDevices()
   //Depending on what hardware is configured, the Qwiic bus may have only been turned on a few ms ago
   //Give sensors, specifically those with a low I2C address, time to turn on
   delay(100); //SCD30 required >50ms to turn on
+<<<<<<< HEAD
+
+  for (uint8_t address = 1 ; address < 127 ; address++)
+  {
+    qwiic.beginTransmission(address);
+    if (qwiic.endTransmission() == 0)
+    {
+      //Serial.printf("Device found at address 0x%02X\n", address);
+      if (testDevice(address) == false)
+        Serial.printf("Unknown I2C device found at address 0x%02X\n", address);
+      else
+        somethingDetected = true;
+    }
+  }
+
+  if (somethingDetected) qwiic.setPullups(0); //We've detected something on the bus so disable pullups
+=======
   Serial.print("Test I2C addresses ");
   for (uint8_t address = 1 ; address < 127 ; address++)
   {
@@ -186,6 +210,7 @@ bool detectQwiicDevices()
   {
     qwiic.setPullups(0); //We've detected something on the bus so disable pullups
   }
+>>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
 
   return (somethingDetected);
 }
@@ -209,11 +234,14 @@ bool detectQwiicDevices()
 #define ADR_MS5637 0x76
 //#define ADR_MS8607 0x76 //Pressure portion of the MS8607 sensor. We'll catch the 0x40 first
 #define ADR_BME280_1 0x77
+<<<<<<< HEAD
+=======
 // SX1509 
 #define ADR_SX1509_0  0x3E // default SX1509 16 channel digital IO
 #define ADR_SX1509_1  0x3F // default SX1509 16 channel digital IO
 #define ADR_SX1509_2  0x70 // default SX1509 16 channel digital IO
 #define ADR_SX1509_3  0x71 // default SX1509 16 channel digital IO
+>>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
 
 //Given an address, see if it repsonds as we would expect
 //Returns false if I2C address is not known
@@ -223,12 +251,17 @@ bool testDevice(uint8_t i2cAddress)
   {
     case ADR_LPS25HB_1:
       if (pressureSensor_LPS25HB.begin(qwiic, ADR_LPS25HB_1) == true) //Wire port, Address.
+<<<<<<< HEAD
+        if (pressureSensor_LPS25HB.isConnected() == true)
+          qwiicAvailable.LPS25HB = true;
+=======
       { 
         if (pressureSensor_LPS25HB.isConnected() == true)
         {
           qwiicAvailable.LPS25HB = true;
         }
       }
+>>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
       break;
     case ADR_LPS25HB_2:
       if (pressureSensor_LPS25HB.begin(qwiic, ADR_LPS25HB_2) == true) //Wire port, Address.
@@ -305,6 +338,8 @@ bool testDevice(uint8_t i2cAddress)
       if (pressureSensor_MS8607.begin(qwiic) == true) //Wire port. Tests for both 0x40 and 0x76 I2C addresses.
         qwiicAvailable.MS8607 = true;
       break;
+<<<<<<< HEAD
+=======
 
     // SX1509 16 channel digital IO devices
     case ADR_SX1509_0: // 0x3E
@@ -352,6 +387,7 @@ bool testDevice(uint8_t i2cAddress)
       }
       break;
       
+>>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
     default:
       Serial.printf("Unknown device at address 0x%02X\n", i2cAddress);
       return false;
@@ -1471,6 +1507,8 @@ void menuConfigure_MS8607()
 
   qwiicOnline.MS8607 = false; //Mark as offline so it will be started with new settings
 }
+<<<<<<< HEAD
+=======
 
 void menuConfigure_digitalIO()
 {
@@ -1509,3 +1547,4 @@ void menuConfigure_digitalIO()
   Serial.println("mark digitalIO_0 as offline");
   qwiicOnline.digitalIO_0/*[subDevice]*/ = false; //Mark as offline so it will be started with new settings
 }
+>>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc

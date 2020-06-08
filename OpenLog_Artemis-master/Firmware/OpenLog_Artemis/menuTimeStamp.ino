@@ -9,9 +9,15 @@ void menuTimeStamp()
 
     char rtcDate[11]; //10/12/2019
     if (settings.americanDateStyle == true)
+<<<<<<< HEAD
+      sprintf(rtcDate, "%02d/%02d/20%02d", myRTC.month, myRTC.dayOfMonth, myRTC.year);
+    else
+      sprintf(rtcDate, "%02d/%02d/20%02d", myRTC.dayOfMonth, myRTC.month, myRTC.year);
+=======
       sprintf(rtcDate, "(mts) Date: %02d/%02d/20%02d", myRTC.month, myRTC.dayOfMonth, myRTC.year);
     else
       sprintf(rtcDate, "(mts) Date: %02d/%02d/20%02d", myRTC.dayOfMonth, myRTC.month, myRTC.year);
+>>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
 
     Serial.print((String)rtcDate);
     Serial.print(" ");
@@ -22,7 +28,11 @@ void menuTimeStamp()
     {
       if (adjustedHour > 12) adjustedHour -= 12;
     }
+<<<<<<< HEAD
+    sprintf(rtcTime, "%02d:%02d:%02d.%02d", adjustedHour, myRTC.minute, myRTC.seconds, myRTC.hundredths);
+=======
     sprintf(rtcTime, "Time: %02d:%02d:%02d.%02d", adjustedHour, myRTC.minute, myRTC.seconds, myRTC.hundredths);
+>>>>>>> fb0ebdbdb4a8bac95657e01bc422c90e6d49f0bc
     Serial.println((String)rtcTime);
 
     Serial.print("1) Log Date: ");
