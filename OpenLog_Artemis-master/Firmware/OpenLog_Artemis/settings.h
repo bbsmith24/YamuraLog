@@ -119,7 +119,6 @@ struct struct_SCD30 {
   int temperatureOffset = 0; //C - Be careful not to overwrite the value on the sensor
 };
 
-
 struct struct_MS8607 {
   bool log = true;
   bool logHumidity = true;
@@ -135,6 +134,25 @@ struct struct_digitalIO
   bool log = true;
   // the SX1509 supports other modes; we're only interested in looging inputs here
   bool logPins[16] = {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false };
+};
+
+// similar to ublox GPS
+struct struct_QWIIC_GPS
+{
+  bool log = true;
+  bool logDate = true;
+  bool logTime = true;
+  bool logPosition = true;
+  bool logAltitude = true;
+  bool logAltitudeMSL = false;
+  bool logSIV = true;
+  bool logFixType = true;
+  bool logCarrierSolution = false;
+  bool logGroundSpeed = true;
+  bool logHeadingOfMotion = true;
+  bool logpDOP = true;
+  bool logiTOW = false;
+  int i2cSpeed = 100000; //Default to 100kHz for least number of CRC issues	
 };
 //This is all the settings that can be set on OpenLog. It's recorded to NVM and the config file.
 struct struct_settings 
@@ -198,6 +216,7 @@ struct struct_settings
   struct_digitalIO sensor_digitalIO_1;
   struct_digitalIO sensor_digitalIO_2;
   struct_digitalIO sensor_digitalIO_3;
+  struct_QWIIC_GPS sensor_qwiic_GPS;
 } settings;
 
 //These are the devices on board OpenLog that may be on or offline.
@@ -229,6 +248,7 @@ struct struct_QwiicSensors {
   bool digitalIO_1;
   bool digitalIO_2;
   bool digitalIO_3;
+  bool qwiic_GPS;
 };
 
 struct_QwiicSensors qwiicAvailable = {
@@ -251,6 +271,7 @@ struct_QwiicSensors qwiicAvailable = {
   .digitalIO_1 = false,
   .digitalIO_2 = false,
   .digitalIO_3 = false,
+  .qwiic_GPS = false
 };
 
 struct_QwiicSensors qwiicOnline = {
@@ -273,6 +294,7 @@ struct_QwiicSensors qwiicOnline = {
   .digitalIO_1 = false,
   .digitalIO_2 = false,
   .digitalIO_3 = false,
+  .qwiic_GPS = false
 };
 //#define ADR_SX1509_0  0x3E // default SX1509 16 channel digital IO
 //#define ADR_SX1509_1  0x3F // default SX1509 16 channel digital IO

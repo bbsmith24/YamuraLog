@@ -2,12 +2,12 @@
   To add a new sensor to the system:
 
   Add the library and the class constructor in OpenLog_Artemis
-  Add a struct_MCP9600 to settings.h - This will define what settings for the sensor we will control
-  Add a 'struct_CCS811 sensor_CCS811;' line to struct_settings{} in settings.h - This will put the sensor settings into NVM
+  Add a struct_xxxx to settings.h - This will define what settings for the sensor we will control
+  Add a 'struct_xxxx sensor_xxxx;' line to struct_settings{} in settings.h - This will put the sensor settings into NVM
   Add device to the struct_QwiicSensors, qwiicAvailable, and qwiicOnline structs in settings.h - This will let OpenLog know it's online and such
   Add device to menuAttachedDevices list
   Add the device's I2C address to the detectQwiicDevices function - Make sure the device is properly recognized with a whoami function (ideally)
-  Create a menuConfigure_LPS25HB() function int menuAttachedDevices - This is the config menu. Add all the features you want the user to be able to control
+  Create a menuConfigure_xxxx() function int menuAttachedDevices - This is the config menu. Add all the features you want the user to be able to control
   Add a startup function for this sensor in Sensors - This will notify the user at startup if sensor is detect and made online.
   Add a harvesting function in Sensors - Get the data from the device
 */
@@ -126,6 +126,11 @@ void menuAttachedDevices()
       functionPointers[availableDevices - 1] = menuConfigure_digitalIO;
       Serial.printf("%d) SX51090 Digital IO at 0x71\n", availableDevices++);
     }
+    if(qwiicAvailable.qwiic_GPS)
+	{
+      functionPointers[availableDevices - 1] = menuConfigure_qwiicGPS;
+      Serial.printf("%d) Sparkfun QWIIC GPS\n", availableDevices++);
+	}
 
     functionPointers[availableDevices - 1] = menuConfigure_QwiicBus;
     Serial.printf("%d) Configure Qwiic Settings\n", availableDevices++);
@@ -191,7 +196,7 @@ bool detectQwiicDevices()
 }
 
 // Available Qwiic devices
-#define ADR_VEML6075 0x10
+//#define ADR_VEML6075 0x10
 #define ADR_NAU7802 0x2A
 #define ADR_VL53L1X 0x29
 #define ADR_MS8607 0x40 //Humidity portion of the MS8607 sensor
@@ -275,10 +280,10 @@ bool testDevice(uint8_t i2cAddress)
       if (vocSensor_SGP30.begin(qwiic) == true) //Wire port
         qwiicAvailable.SGP30 = true;
       break;
-    case ADR_VEML6075:
-      if (uvSensor_VEML6075.begin(qwiic) == true) //Wire port
-        qwiicAvailable.VEML6075 = true;
-      break;
+    //case ADR_VEML6075:
+     // if (uvSensor_VEML6075.begin(qwiic) == true) //Wire port
+     //   qwiicAvailable.VEML6075 = true;
+     // break;
     case ADR_MS5637:
       {
         //By the time we hit this address, MS8607 should have already been started by its first address
@@ -351,7 +356,9 @@ bool testDevice(uint8_t i2cAddress)
         Serial.println("digitalIO_3 not started");
       }
       break;
-      
+    case 0x10:
+		qwiicAvailable.qwiic_GPS = true;
+		break;
     default:
       Serial.printf("Unknown device at address 0x%02X\n", i2cAddress);
       return false;
@@ -1508,4 +1515,31 @@ void menuConfigure_digitalIO()
   }
   Serial.println("mark digitalIO_0 as offline");
   qwiicOnline.digitalIO_0/*[subDevice]*/ = false; //Mark as offline so it will be started with new settings
+}
+void menuConfigure_qwiicGPS()
+{
+  while (1)
+  {
+    Serial.println();
+    Serial.printf("Menu: Configure Sparkfun QWIIC GPS\n");
+
+    Serial.print("1) GPS Logging: ");
+    settings.sensor_qwiic_GPS.log == true ? Serial.println("Enabled") : Serial.println("Disabled");
+    Serial.println("x) Exit");
+	  byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
+
+    if (incoming == 'x')
+    {
+      break;
+    }
+    else if(incoming == '1' )
+    {
+      settings.sensor_qwiic_GPS.log = !settings.sensor_qwiic_GPS.log;
+	  }
+    else
+    {
+      printUnknown(incoming);
+    }
+  }
+  qwiicOnline.qwiic_GPS = false; //Mark as offline so it will be started with new settings
 }

@@ -247,11 +247,29 @@ bool beginSensors()
       qwiicOnline.digitalIO_0 = false;
       beginSensorOutput += "SX1509 at 0x3E failed to respond. Check wiring.\n";
     }
-    
   }
   else
   {
       beginSensorOutput += "SX1509 at 0x3E not available, not set for logging, or not online\n";
+  }
+
+  if(qwiicAvailable.qwiic_GPS && settings.sensor_qwiic_GPS.log && !qwiicOnline.qwiic_GPS)
+  {
+    Serial.println("Initialize Sparkfun QWIIC GPS");
+    if(gpsSensor_QWIIC.begin(qwiic))
+    {
+      qwiicOnline.qwiic_GPS = true;
+      beginSensorOutput += "Sparkfun QWIIC GPS initialized.\n";
+    }
+    else
+    {
+      qwiicOnline.digitalIO_0 = false;
+      beginSensorOutput += "Sparkfun QWIIC GPS failed to respond. Check wiring.\n";
+    }
+  }
+  else
+  {
+      beginSensorOutput += "Sparkfun QWIIC GPS not available, not set for logging, or not online\n";
   }
 
   return true;
@@ -263,6 +281,9 @@ void getData()
   measurementCount++;
 
   outputData = "";
+  outputData += (String)(millis() - lastMillis);
+  lastMillis = millis();
+  outputData += ",";
   String helperText = "";
 
   if (settings.logRTC)
@@ -275,7 +296,7 @@ void getData()
       if (settings.logDate)
       {
         char rtcDate[11]; //10/12/2019
-        outputData += "(s) Date: ";
+        //outputData += "(s) Date: ";
         if (settings.americanDateStyle == true)
         {
           sprintf(rtcDate, "%02d/%02d/20%02d", myRTC.month, myRTC.dayOfMonth, myRTC.year);
@@ -296,8 +317,8 @@ void getData()
         {
           if (adjustedHour > 12) adjustedHour -= 12;
         }
-        outputData += "Time: ";
-        sprintf(rtcTime, "%02d:%02d:%02d.%02d", adjustedHour, myRTC.minute, myRTC.seconds, myRTC.hundredths);
+        //outputData += "Time: ";
+        sprintf(rtcTime, "%02d:%02d:%02d.%03d", adjustedHour, myRTC.minute, myRTC.seconds, myRTC.hundredths);
         outputData += String(rtcTime) + ",";
         helperText += "rtcTime,";
       }
@@ -454,92 +475,194 @@ void getData()
       helperText += "thermo_ambientDegC,";
     }
   }
-
+  // UBLOX GPS on I2C
   if (qwiicOnline.uBlox && settings.sensor_uBlox.log)
   {
-    //Calling getPVT returns true if there actually is a fresh navigation solution available.
-    //getPVT will block/wait up to 1000ms to receive new data. This will affect the global reading rate.
-    //    if (gpsSensor_ublox.getPVT())
-    gpsSensor_ublox.getPVT();
-    //    {
-    if (settings.sensor_uBlox.logDate)
+    if(((millis() - lastGPSTime) > 100) && 
+       (gpsSensor_ublox.checkUblox()))
+    {
+      // Calling getPVT returns true if there actually is a fresh navigation solution available.
+      // getPVT will block/wait up to 1000ms to receive new data. This will affect the global reading rate.
+      lastGPSTime = millis();
+      gpsSensor_ublox.getPVT();
+      if (settings.sensor_uBlox.logDate)
+      {
+        char gpsDate[11]; //10/12/2019
+        if (settings.americanDateStyle == true)
+        {
+          sprintf(gpsDate, "%02d/%02d/%d", gpsSensor_ublox.getMonth(), gpsSensor_ublox.getDay(), gpsSensor_ublox.getYear());
+        }
+        else
+        {
+          sprintf(gpsDate, "%02d/%02d/%d", gpsSensor_ublox.getDay(), gpsSensor_ublox.getMonth(), gpsSensor_ublox.getYear());
+        }
+        outputData += String(gpsDate) + ",";
+        helperText += "gps_Date,";
+      }
+      if (settings.sensor_uBlox.logTime)
+      {
+        char gpsTime[12]; //09:14:37.41
+        int adjustedHour = gpsSensor_ublox.getHour();
+        if (settings.hour24Style == false)
+        {
+          if (adjustedHour > 12) adjustedHour -= 12;
+        }
+        sprintf(gpsTime, "%02d:%02d:%02d.%03d", adjustedHour, gpsSensor_ublox.getMinute(), gpsSensor_ublox.getSecond(), gpsSensor_ublox.getNanosecond());// gpsSensor_ublox.getMillisecond());
+        outputData += String(gpsTime) + ",";
+        helperText += "gps_Time,";
+      }
+      if (settings.sensor_uBlox.logPosition)
+      {
+        outputData += (String)gpsSensor_ublox.getLatitude() + ",";
+        outputData += (String)gpsSensor_ublox.getLongitude() + ",";
+        helperText += "gps_Lat,gps_Long,";
+      }
+      if (settings.sensor_uBlox.logAltitude)
+      {
+        outputData += (String)gpsSensor_ublox.getAltitude() + ",";
+        helperText += "gps_Alt,";
+      }
+      if (settings.sensor_uBlox.logAltitudeMSL)
+      {
+        outputData += (String)gpsSensor_ublox.getAltitudeMSL() + ",";
+        helperText += "gps_AltMSL,";
+      }
+      if (settings.sensor_uBlox.logSIV)
+      {
+        outputData += (String)gpsSensor_ublox.getSIV() + ",";
+        helperText += "gps_SIV,";
+      }
+      if (settings.sensor_uBlox.logFixType)
+      {
+        outputData += (String)gpsSensor_ublox.getFixType() + ",";
+        helperText += "gps_FixType,";
+      }
+      if (settings.sensor_uBlox.logCarrierSolution)
+      {
+        outputData += (String)gpsSensor_ublox.getCarrierSolutionType() + ","; //0=No solution, 1=Float solution, 2=Fixed solution. Useful when querying module to see if it has high-precision RTK fix.
+        helperText += "gps_CarrierSolution,";
+      }
+      if (settings.sensor_uBlox.logGroundSpeed)
+      {
+        outputData += (String)gpsSensor_ublox.getGroundSpeed() + ",";
+        helperText += "gps_GroundSpeed,";
+      }
+      if (settings.sensor_uBlox.logHeadingOfMotion)
+      {
+        outputData += (String)gpsSensor_ublox.getHeading() + ",";
+        helperText += "gps_Heading,";
+      }
+      if (settings.sensor_uBlox.logpDOP)
+      {
+        outputData += (String)gpsSensor_ublox.getPDOP() + ",";
+        helperText += "gps_pDOP,";
+      }
+      if (settings.sensor_uBlox.logiTOW)
+      {
+        outputData += (String)gpsSensor_ublox.getTimeOfWeek() + ",";
+        helperText += "gps_iTOW,";
+      }
+
+      gpsSensor_ublox.flushPVT(); //Mark all PVT data as used
+    //    }
+    }
+    else
+    {
+      if (settings.sensor_uBlox.logDate)
+      {
+        outputData += ",";
+      }
+      if (settings.sensor_uBlox.logTime)
+      {
+        outputData += ",";
+      }
+      if (settings.sensor_uBlox.logPosition)
+      {
+        outputData += ",";
+        outputData += ",";
+      }
+      if (settings.sensor_uBlox.logAltitude)
+      {
+        outputData += ",";
+      }
+      if (settings.sensor_uBlox.logAltitudeMSL)
+      {
+        outputData += ",";
+      }
+      if (settings.sensor_uBlox.logSIV)
+      {
+        outputData += ",";
+      }
+      if (settings.sensor_uBlox.logFixType)
+      {
+        outputData += ",";
+      }
+      if (settings.sensor_uBlox.logCarrierSolution)
+      {
+        outputData += ",";
+      }
+      if (settings.sensor_uBlox.logGroundSpeed)
+      {
+        outputData += ",";
+      }
+      if (settings.sensor_uBlox.logHeadingOfMotion)
+      {
+        outputData += ",";
+      }
+      if (settings.sensor_uBlox.logpDOP)
+      {
+        outputData += ",";
+      }
+      if (settings.sensor_uBlox.logiTOW)
+      {
+        outputData += ",";
+      }
+    }
+  }
+  if (qwiicOnline.qwiic_GPS && 
+      settings.sensor_qwiic_GPS.log &&
+      ((millis() - lastGPSTime) > 100) && 
+      gpsSensor_QWIIC.available())
+  {
+    lastGPSTime = millis();
+    gps.encode(gpsSensor_QWIIC.read()); //Feed the GPS parser
+    if (gps.time.isValid())
     {
       char gpsDate[11]; //10/12/2019
+      char gpsTime[15]; //09:14:37.41
       if (settings.americanDateStyle == true)
-        sprintf(gpsDate, "%02d/%02d/%d", gpsSensor_ublox.getMonth(), gpsSensor_ublox.getDay(), gpsSensor_ublox.getYear());
+      {
+        sprintf(gpsDate, "%02d/%02d/%04d", gps.date.month(), gps.date.day(), gps.date.year());
+      }
       else
-        sprintf(gpsDate, "%02d/%02d/%d", gpsSensor_ublox.getDay(), gpsSensor_ublox.getMonth(), gpsSensor_ublox.getYear());
+      {
+        sprintf(gpsDate, "%02d/%02d/%04d",  gps.date.day(), gps.date.month(), gps.date.year());
+      }
       outputData += String(gpsDate) + ",";
       helperText += "gps_Date,";
-    }
-    if (settings.sensor_uBlox.logTime)
-    {
-      char gpsTime[12]; //09:14:37.41
-      int adjustedHour = gpsSensor_ublox.getHour();
-      if (settings.hour24Style == false)
-      {
-        if (adjustedHour > 12) adjustedHour -= 12;
-      }
-      sprintf(gpsTime, "%02d:%02d:%02d.%03d", adjustedHour, gpsSensor_ublox.getMinute(), gpsSensor_ublox.getSecond(), gpsSensor_ublox.getMillisecond());
+
+      sprintf(gpsTime, "%02d:%02d:%02d.%03d", gps.time.hour(), gps.time.minute(), gps.time.second(), gps.time.centisecond());
       outputData += String(gpsTime) + ",";
       helperText += "gps_Time,";
     }
-    if (settings.sensor_uBlox.logPosition)
+    else
     {
-      outputData += (String)gpsSensor_ublox.getLatitude() + ",";
-      outputData += (String)gpsSensor_ublox.getLongitude() + ",";
-      helperText += "gps_Lat,gps_Long,";
-    }
-    if (settings.sensor_uBlox.logAltitude)
-    {
-      outputData += (String)gpsSensor_ublox.getAltitude() + ",";
-      helperText += "gps_Alt,";
-    }
-    if (settings.sensor_uBlox.logAltitudeMSL)
-    {
-      outputData += (String)gpsSensor_ublox.getAltitudeMSL() + ",";
-      helperText += "gps_AltMSL,";
-    }
-    if (settings.sensor_uBlox.logSIV)
-    {
-      outputData += (String)gpsSensor_ublox.getSIV() + ",";
-      helperText += "gps_SIV,";
-    }
-    if (settings.sensor_uBlox.logFixType)
-    {
-      outputData += (String)gpsSensor_ublox.getFixType() + ",";
-      helperText += "gps_FixType,";
-    }
-    if (settings.sensor_uBlox.logCarrierSolution)
-    {
-      outputData += (String)gpsSensor_ublox.getCarrierSolutionType() + ","; //0=No solution, 1=Float solution, 2=Fixed solution. Useful when querying module to see if it has high-precision RTK fix.
-      helperText += "gps_CarrierSolution,";
-    }
-    if (settings.sensor_uBlox.logGroundSpeed)
-    {
-      outputData += (String)gpsSensor_ublox.getGroundSpeed() + ",";
-      helperText += "gps_GroundSpeed,";
-    }
-    if (settings.sensor_uBlox.logHeadingOfMotion)
-    {
-      outputData += (String)gpsSensor_ublox.getHeading() + ",";
-      helperText += "gps_Heading,";
-    }
-    if (settings.sensor_uBlox.logpDOP)
-    {
-      outputData += (String)gpsSensor_ublox.getPDOP() + ",";
-      helperText += "gps_pDOP,";
-    }
-    if (settings.sensor_uBlox.logiTOW)
-    {
-      outputData += (String)gpsSensor_ublox.getTimeOfWeek() + ",";
-      helperText += "gps_iTOW,";
+      outputData += "Time not valid,,";
     }
 
-    gpsSensor_ublox.flushPVT(); //Mark all PVT data as used
-    //    }
+    if (gps.location.isValid())
+    {
+      char latLong[24];   //sxx.xxxxxx
+      sprintf(latLong, "%.6lf, %.6lf, ",gps.location.lat(), gps.location.lng()); 
+      outputData += latLong;
+    }
+    else
+    {
+      outputData += "Location not yet valid,,";
+    }
+    outputData += gps.satellites.value();
+    outputData += ", ";
   }
-
   if (qwiicOnline.VCNL4040 && settings.sensor_VCNL4040.log)
   {
     if (settings.sensor_VCNL4040.logProximity)
@@ -715,17 +838,19 @@ void getData()
   }
   if(qwiicOnline.digitalIO_0 && settings.sensor_digitalIO_0.log)
   {
-    outputData += " SX1509 (0x3E)";
+    outputData += "SX1509 (0x3E),";
+    uint16_t pinVals = digitalIO[0].readWord(0x10);
     for(int pinIdx = 0; pinIdx < 16; pinIdx++)
     {
-       outputData += " " + (String)pinIdx;
+      //outputData += " " + (String)pinIdx;
       if(settings.sensor_digitalIO_0.logPins[pinIdx] == true)
       {
-        outputData += (digitalIO[0].digitalRead(pinIdx) == LOW ? "L " : "H ");
+        //outputData += (digitalIO[0].digitalRead(pinIdx) == LOW ? "L, " : "H, ");
+        outputData += (pinVals & (1 << pinIdx)) > 0 ?  "L," : "H,";
       }
       else
       {
-        outputData += "X ";
+        outputData += "X,";
       }
     }
   }
@@ -752,8 +877,10 @@ void getData()
     }
 
     float actualRate = measurementCount * 1000.0 / (currentMillis - measurementStartTime);
-    outputData += (String)actualRate + ","; //Hz
-    helperText += "output_Hz,";
+    outputData += ",";
+    outputData += (String)(int)(currentMillis - measurementStartTime) + ","; //Hz
+    outputData += (String)actualRate;// + ","; //Hz
+    helperText += "output_Hz";
   }
 
   outputData += '\n';

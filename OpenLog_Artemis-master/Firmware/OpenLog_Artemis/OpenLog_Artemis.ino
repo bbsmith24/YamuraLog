@@ -119,6 +119,12 @@ SFE_UBLOX_GPS gpsSensor_ublox;
 #include "SparkFun_VCNL4040_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_VCNL4040
 VCNL4040 proximitySensor_VCNL4040;
 
+#include <SparkFun_I2C_GPS_Arduino_Library.h>         // QWIIC GPS device
+I2CGPS gpsSensor_QWIIC;                               // hook gps object to the library
+
+#include <TinyGPS++.h> //From: https://github.com/mikalhart/TinyGPSPlus
+TinyGPSPlus gps; //Declare gps object
+
 #include "SparkFun_MCP9600.h" //Click here to get the library: http://librarymanager/All#SparkFun_MCP9600
 MCP9600 thermoSensor_MCP9600;
 
@@ -173,6 +179,8 @@ unsigned int totalCharactersPrinted = 0; //Limit output rate based on baud rate 
 bool takeReading = true; //Goes true when enough time has passed between readings or we've woken from sleep
 const uint32_t maxUsBeforeSleep = 2000000; //Number of us between readings before sleep is activated.
 const byte menuTimeout = 45; //Menus will exit/timeout after this number of seconds
+uint64_t lastGPSTime = 0;
+unsigned long lastMillis = 0;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //unsigned long startTime = 0;
@@ -341,8 +349,11 @@ void loop()
   if (settings.usBetweenReadings < maxUsBeforeSleep)
   {
     if ((micros() - lastReadTime) >= settings.usBetweenReadings)
+    {
       takeReading = true;
+    }
   }
+  takeReading = true;
 
   //Is it time to get new data?
   if (settings.logMaxRate == true || takeReading == true)
