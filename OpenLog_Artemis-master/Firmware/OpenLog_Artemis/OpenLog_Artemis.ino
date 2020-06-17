@@ -4,6 +4,7 @@
 #include <SdFat.h> //We use SdFat-Beta from Bill Greiman for increased read/write speed: https://github.com/greiman/SdFat-beta
 #include <SdFatConfig.h>
 #include <sdios.h>
+#include "qwiic_sensors.h"
 
 
 /*
@@ -160,7 +161,7 @@ MS8607 pressureSensor_MS8607;
 
 // SX1509 16 channel digital IO devices
 #include <SparkFunSX1509.h>
-SX1509 digitalIO[4];
+SX1509 digitalSensor_SX1509[4];
 
 
 

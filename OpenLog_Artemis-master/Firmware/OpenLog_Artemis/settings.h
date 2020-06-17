@@ -1,7 +1,8 @@
 #include <SparkFun_PHT_MS8607_Arduino_Library.h>
+//#ifndef SETTINGS_H
+//#define SETTINGS_H 
 //
 //#include "MS8607_Library.h" //Click here to get the library: http://librarymanager/All#Qwiic_MS8607
-
 //Add the new sensor settings below
 struct struct_LPS25HB {
   bool log = true;
@@ -129,7 +130,7 @@ struct struct_MS8607 {
   MS8607_humidity_resolution humidityResolution = MS8607_humidity_resolution_12b; //12-bit
 };
 
-struct struct_digitalIO
+struct struct_SX1509
 {
   bool log = true;
   // the SX1509 supports other modes; we're only interested in looging inputs here
@@ -212,10 +213,10 @@ struct struct_settings
   struct_MS5637 sensor_MS5637;
   struct_SCD30 sensor_SCD30;
   struct_MS8607 sensor_MS8607;
-  struct_digitalIO sensor_digitalIO_0;
-  struct_digitalIO sensor_digitalIO_1;
-  struct_digitalIO sensor_digitalIO_2;
-  struct_digitalIO sensor_digitalIO_3;
+  struct_SX1509 sensor_digitalIO_0;
+  struct_SX1509 sensor_digitalIO_1;
+  struct_SX1509 sensor_digitalIO_2;
+  struct_SX1509 sensor_digitalIO_3;
   struct_QWIIC_GPS sensor_qwiic_GPS;
 } settings;
 
@@ -300,7 +301,5 @@ struct_QwiicSensors qwiicOnline = {
 //#define ADR_SX1509_1  0x3F // default SX1509 16 channel digital IO
 //#define ADR_SX1509_2  0x70 // default SX1509 16 channel digital IO
 //#define ADR_SX1509_3  0x71 // default SX1509 16 channel digital IO
-
-
-
 int sx1509_Addresses[4] = {0x3E, 0x3F, 0x70, 0x71};
+//#endif

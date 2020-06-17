@@ -230,13 +230,13 @@ bool beginSensors()
   if(qwiicAvailable.digitalIO_0 && settings.sensor_digitalIO_0.log && !qwiicOnline.digitalIO_0)
   {
     Serial.println("Initialize digitalIO_0 at 0x3E");
-    if(digitalIO[0].begin(0x3E))
+    if(digitalSensor_SX1509[0].begin(0x3E))
     {
       for(int pinIdx = 0; pinIdx < 16; pinIdx++)
       {
         if(settings.sensor_digitalIO_0.logPins[pinIdx] == true)
         {
-          digitalIO[0].pinMode(pinIdx, INPUT);     
+          digitalSensor_SX1509[0].pinMode(pinIdx, INPUT);     
         }
       }
       qwiicOnline.digitalIO_0 = true;
@@ -839,13 +839,13 @@ void getData()
   if(qwiicOnline.digitalIO_0 && settings.sensor_digitalIO_0.log)
   {
     outputData += "SX1509 (0x3E),";
-    uint16_t pinVals = digitalIO[0].readWord(0x10);
+    uint16_t pinVals = digitalSensor_SX1509[0].readWord(0x10);
     for(int pinIdx = 0; pinIdx < 16; pinIdx++)
     {
       //outputData += " " + (String)pinIdx;
       if(settings.sensor_digitalIO_0.logPins[pinIdx] == true)
       {
-        //outputData += (digitalIO[0].digitalRead(pinIdx) == LOW ? "L, " : "H, ");
+        //outputData += (digitalSensor_SX1509[0].digitalRead(pinIdx) == LOW ? "L, " : "H, ");
         outputData += (pinVals & (1 << pinIdx)) > 0 ?  "L," : "H,";
       }
       else

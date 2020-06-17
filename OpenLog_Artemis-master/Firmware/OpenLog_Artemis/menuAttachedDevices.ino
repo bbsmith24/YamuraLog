@@ -313,7 +313,7 @@ bool testDevice(uint8_t i2cAddress)
 
     // SX1509 16 channel digital IO devices
     case ADR_SX1509_0: // 0x3E
-      if (digitalIO[0].begin(sx1509_Addresses[0]) == true)
+      if (digitalSensor_SX1509[0].begin(sx1509_Addresses[0]) == true)
       {
          qwiicAvailable.digitalIO_0 = true;
         Serial.println("digitalIO_0 started");
@@ -324,7 +324,7 @@ bool testDevice(uint8_t i2cAddress)
       }
       break;
     case ADR_SX1509_1: // 0x3F
-      if (digitalIO[1].begin(sx1509_Addresses[1]) == true)
+      if (digitalSensor_SX1509[1].begin(sx1509_Addresses[1]) == true)
       {
          qwiicAvailable.digitalIO_1 = true;
         Serial.println("digitalIO_1 started");
@@ -335,7 +335,7 @@ bool testDevice(uint8_t i2cAddress)
       }
       break;
     case ADR_SX1509_2: // 0x70
-      if (digitalIO[2].begin(sx1509_Addresses[2]) == true)
+      if (digitalSensor_SX1509[2].begin(sx1509_Addresses[2]) == true)
       {
          qwiicAvailable.digitalIO_2 = true;
         Serial.println("digitalIO_2 started");
@@ -346,7 +346,7 @@ bool testDevice(uint8_t i2cAddress)
       }
       break;
     case ADR_SX1509_3: // 0x71
-      if (digitalIO[3].begin(sx1509_Addresses[3]) == true)
+      if (digitalSensor_SX1509[3].begin(sx1509_Addresses[3]) == true)
       {
          qwiicAvailable.digitalIO_3 = true;
         Serial.println("digitalIO_3 started");
